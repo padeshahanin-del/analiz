@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta http-equiv="Content-Security-Policy"
+        content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:;" />
+  <title>Kalaxa</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <!-- Error Boundary: در خطای کنترل‌نشدهٔ رابط، فقط این بخش نمایش داده می‌شود -->
+  <div id="boundary" class="boundary hidden" role="alert">
+    <h2 id="boundary-title"></h2>
+    <p id="boundary-body"></p>
+    <button id="boundary-reload"></button>
+  </div>
+
+  <main id="app" class="hidden">
+    <header>
+      <h1 id="t-title"></h1>
+      <p id="t-subtitle" class="muted"></p>
+    </header>
+
+    <section class="card">
+      <div class="row">
+        <span class="dot ok" aria-hidden="true"></span>
+        <span id="t-status"></span>
+        <span class="spacer"></span>
+        <span class="muted" id="t-version"></span>
+      </div>
+    </section>
+
+    <section class="card">
+      <label id="t-language"></label>
+      <div class="row" id="locale-buttons"></div>
+    </section>
+
+    <section class="card">
+      <button id="btn-ping"></button>
+      <button id="btn-error"></button>
+      <button id="btn-ui-error" class="ghost"></button>
+      <p id="result" class="muted" aria-live="polite"></p>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>

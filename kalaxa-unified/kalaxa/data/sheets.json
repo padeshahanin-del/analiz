@@ -1,0 +1,25 @@
+{
+  "_note": "کاتالوگ ورق پیش‌فرض — تا این نسخه دو جا نوشته شده بود: ProjectScanner::DEFAULT_SHEETS در Ruby و DEFAULTS.sheets در kalaxa-settings.js. یک ورق که فقط در یکی اضافه می‌شد، در دیگری قطعهٔ بی‌جا می‌ساخت.",
+  "catalog_version": 1,
+
+  "sheets": [
+    { "sheet_id": "mdf_white_16", "material": "mdf", "color_code": "W101", "thickness_mm": 16,
+      "width_mm": 3660, "height_mm": 1830, "has_grain": false, "price_per_sheet": 0, "trim_margin_mm": 10 },
+    { "sheet_id": "mdf_white_8", "material": "mdf", "color_code": "W101", "thickness_mm": 8,
+      "width_mm": 3660, "height_mm": 1830, "has_grain": false, "price_per_sheet": 0, "trim_margin_mm": 10 },
+    { "sheet_id": "mdf_door_16", "material": "mdf_hg", "color_code": "DOOR", "thickness_mm": 16,
+      "width_mm": 2800, "height_mm": 2100, "has_grain": true, "price_per_sheet": 0, "trim_margin_mm": 10 },
+    { "sheet_id": "hdf_3", "material": "hdf", "color_code": "RAW", "thickness_mm": 3,
+      "width_mm": 2440, "height_mm": 1220, "has_grain": false, "price_per_sheet": 0, "trim_margin_mm": 5 },
+    { "sheet_id": "glass_4", "material": "glass", "color_code": "CLEAR", "thickness_mm": 4,
+      "width_mm": 2400, "height_mm": 1600, "has_grain": false, "price_per_sheet": 0, "trim_margin_mm": 5 },
+    { "sheet_id": "glass_6", "material": "glass", "color_code": "CLEAR", "thickness_mm": 6,
+      "width_mm": 2400, "height_mm": 1600, "has_grain": false, "price_per_sheet": 0, "trim_margin_mm": 5 }
+  ],
+
+  "cutting": {
+    "kerf_mm": 4,
+    "allow_rotation_default": true,
+    "min_offcut_mm": 100
+  }
+}

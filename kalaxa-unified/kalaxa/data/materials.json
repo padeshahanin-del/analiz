@@ -1,0 +1,50 @@
+{
+  "_note": "کاتالوگ متریال — رنگ و شفافیت برای مدل‌سازی، و نگاشت ورق→متریال و قطعه→ورق. تنها منبع حقیقت برای Ruby (lib/materials.rb) و JS (ui/kalaxa-catalog.js).",
+  "catalog_version": 1,
+
+  "_sheet_goods_note": "sheet_goods=false یعنی متری/عددی خریده می‌شود، نه ورقی → وارد نستینگ ورق نمی‌شود.",
+  "materials": {
+    "mdf":      { "rgb": [232, 223, 206], "alpha": 1.0,  "glossary": "material.mdf",      "sheet_goods": true },
+    "mdf_hg":   { "rgb": [245, 245, 247], "alpha": 1.0,  "glossary": "material.mdf_hg",   "sheet_goods": true },
+    "hdf":      { "rgb": [201, 169, 122], "alpha": 1.0,  "glossary": "material.hdf",      "sheet_goods": true },
+    "glass":    { "rgb": [174, 214, 232], "alpha": 0.35, "glossary": "material.glass",    "sheet_goods": true },
+    "aluminum": { "rgb": [184, 188, 192], "alpha": 1.0,  "glossary": "material.aluminum", "sheet_goods": false },
+    "hardware": { "rgb": [120, 124, 128], "alpha": 1.0,  "glossary": "material.hardware", "sheet_goods": false }
+  },
+
+  "default_material": "mdf",
+
+  "_glass_note": "ورق‌های شیشه با پیشوند glass_ شناخته می‌شوند تا افزودن ضخامت تازه (glass_10) نیازی به تغییر کد نداشته باشد.",
+  "glass_sheet_prefix": "glass",
+
+  "sheet_material": {
+    "mdf_white_16": "mdf",
+    "mdf_white_8": "mdf",
+    "mdf_door_16": "mdf_hg",
+    "hdf_3": "hdf"
+  },
+
+  "_non_sheet_note": "قطعاتی که ورق نیستند ولی در مدل دیده می‌شوند — متریالشان مستقیم است.",
+  "non_sheet_key_material": {
+    "door_frame": "aluminum",
+    "handle": "hardware",
+    "handle_groove": "mdf_hg",
+    "slide": "hardware",
+    "leg": "hardware"
+  },
+
+  "_key_sheet_note": "ورق پیش‌فرض هر قطعهٔ بدنه — build_parts هم از همین می‌خواند.",
+  "key_sheet": {
+    "side": "mdf_white_16",
+    "bottom": "mdf_white_16",
+    "top_bottom": "mdf_white_16",
+    "rail_top": "mdf_white_16",
+    "rail_bottom": "mdf_white_16",
+    "shelf": "mdf_white_16",
+    "back": "mdf_white_8",
+    "drawer_front": "mdf_door_16",
+    "drawer_side": "mdf_white_16",
+    "drawer_back": "mdf_white_16",
+    "drawer_bottom": "hdf_3"
+  }
+}

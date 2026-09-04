@@ -1,0 +1,73 @@
+:root {
+  --bg: #f6f4ef;
+  --card: #ffffff;
+  --ink: #2b2620;
+  --muted: #7a7265;
+  --accent: #8a5a2b;
+  --accent-ink: #ffffff;
+  --ok: #2e7d32;
+  --err: #b3261e;
+  --radius: 10px;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: "Segoe UI", Tahoma, "Vazirmatn", sans-serif;
+  font-size: 14px;
+}
+
+/* جهت متن از ویژگی dir روی html کنترل می‌شود؛ چیدمان‌ها منطقی (logical) هستند */
+main { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+header h1 { margin: 0; font-size: 20px; color: var(--accent); }
+header p { margin: 4px 0 0; }
+
+.card {
+  background: var(--card);
+  border: 1px solid #e6e0d6;
+  border-radius: var(--radius);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.spacer { flex: 1; }
+.muted { color: var(--muted); }
+
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot.ok { background: var(--ok); }
+
+button {
+  font: inherit;
+  padding: 8px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--accent);
+  background: var(--accent);
+  color: var(--accent-ink);
+  cursor: pointer;
+}
+button:hover { filter: brightness(1.08); }
+button.ghost { background: transparent; color: var(--accent); }
+button.locale { background: transparent; color: var(--ink); border-color: #d8d0c2; }
+button.locale.active { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+
+.hidden { display: none !important; }
+
+.boundary {
+  margin: 24px;
+  padding: 16px;
+  border: 1px solid var(--err);
+  border-radius: var(--radius);
+  background: #fdecea;
+  color: var(--err);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.boundary button { background: var(--err); border-color: var(--err); }

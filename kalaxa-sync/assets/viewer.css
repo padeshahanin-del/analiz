@@ -1,0 +1,11 @@
+#kalaxa-viewer-app { font-size: 14px; }
+#kalaxa-viewer-app table { border-collapse: collapse; margin: 8px 0; }
+#kalaxa-viewer-app th, #kalaxa-viewer-app td { border: 1px solid #dcd6cc; padding: 6px 10px; text-align: right; }
+#kalaxa-viewer-app th { background: #f0ebe3; }
+#kalaxa-viewer-app .map-wrap { border: 1px solid #eee; border-radius: 8px; padding: 8px; overflow-x: auto; margin: 10px 0; background: #fff; }
+#kalaxa-viewer-app .kx-msg { padding: 8px 12px; border-radius: 6px; margin: 6px 0; }
+#kalaxa-viewer-app .kx-msg.err { background: #fdecea; color: #c62828; border: 1px solid #f5c6c3; }
+#kalaxa-viewer-app .kx-msg.info { background: #e7f0fb; color: #1565c0; border: 1px solid #bcd6f2; }
+#kalaxa-viewer-app .msg.warn { background: #fff4e5; color: #e65100; border: 1px solid #ffd9a8; padding: 8px 12px; border-radius: 6px; }
+#kalaxa-viewer-app .meta { color: #666; font-size: 12px; margin: 4px 0 10px; }
+#kalaxa-viewer-app h2 { border-bottom: 2px solid #b08d57; padding-bottom: 4px; margin-top: 22px; }

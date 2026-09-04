@@ -1,0 +1,71 @@
+{
+  "_note": "کاتالوگ شکل ساخت درب — تنها منبع حقیقت. Ruby (lib/door_shapes.rb) و JS (ui/kalaxa-catalog.js) هر دو همین فایل را می‌خوانند. پیش از این، فهرست شکل‌ها و ضخامت‌های مجاز در دو زبان جدا نوشته شده بود و فقط یک تست جلوی واگراییشان را می‌گرفت.",
+  "catalog_version": 1,
+
+  "shapes": {
+    "flat": {
+      "kind": "panel",
+      "thicknesses_mm": [16, 18, 20, 25],
+      "default_mm": 16,
+      "sheet": "mdf_door_16",
+      "glossary": "door_shape.flat"
+    },
+    "routed": {
+      "kind": "panel",
+      "thicknesses_mm": [16, 18, 20, 25],
+      "default_mm": 18,
+      "sheet": "mdf_door_16",
+      "glossary": "door_shape.routed",
+      "operation": "rout"
+    },
+    "framed_panel": {
+      "kind": "framed",
+      "thicknesses_mm": [16, 18, 20, 25],
+      "default_mm": 20,
+      "sheet": "mdf_door_16",
+      "glossary": "door_shape.framed_panel",
+      "frame_width_mm": 70,
+      "panel_thickness_mm": 8,
+      "panel_sheet": "mdf_white_8",
+      "groove_depth_mm": 8
+    },
+    "glass_aluminum": {
+      "kind": "profile",
+      "thicknesses_mm": [20],
+      "default_mm": 20,
+      "glossary": "door_shape.glass_aluminum",
+      "frame_width_mm": 24,
+      "infill": "glass",
+      "infill_thickness_mm": 4,
+      "infill_sheet": "glass_4",
+      "infill_overlap_mm": 8
+    },
+    "mdf_aluminum": {
+      "kind": "profile",
+      "thicknesses_mm": [16, 18, 20],
+      "default_mm": 20,
+      "glossary": "door_shape.mdf_aluminum",
+      "frame_width_mm": 24,
+      "infill": "panel",
+      "infill_thickness_mm": 8,
+      "infill_sheet": "mdf_white_8",
+      "infill_overlap_mm": 8
+    },
+    "glass_full": {
+      "kind": "panel",
+      "thicknesses_mm": [4, 5, 6, 8],
+      "default_mm": 6,
+      "sheet": "glass_4",
+      "glossary": "door_shape.glass_full",
+      "material": "glass"
+    }
+  },
+
+  "default_shape": "flat",
+
+  "_legacy_note": "سند قدیمی door_shape ندارد؛ از door_type (رویه/پرداخت) حدس زده می‌شود تا رفتار قبلی نشکند.",
+  "type_to_shape": {
+    "glass_aluminum": "glass_aluminum",
+    "mdf_aluminum_frame": "mdf_aluminum"
+  }
+}

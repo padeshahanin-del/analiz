@@ -1,0 +1,103 @@
+{
+  "_note": "لوازم و آبجکت‌های آشپزخانه. اینها **قطعهٔ بریدنی نیستند** — خریده می‌شوند. پس در لیست برش نمی‌آیند ولی در فهرست کالا و مدل سه‌بعدی باید باشند. ابعاد، مدول‌های رایج بازار ایران‌اند و در تنظیمات قابل تغییرند.",
+  "_cutout": "بریدگی: سینک و اجاق روی صفحهٔ کار سوراخ می‌خواهند. عددها از خودِ دستگاه می‌آیند و معمولاً کوچک‌تر از ابعاد بیرونی‌اند (لبهٔ دستگاه روی صفحه می‌نشیند). اگر بریدگی گفته نشود، کارگاه اندازهٔ بیرونی را می‌بُرد و دستگاه توی سوراخ می‌افتد.",
+  "_built_in": "built_in یعنی داخل کابینت می‌نشیند و بدنه باید جا داشته باشد؛ free یعنی مستقل می‌ایستد.",
+  "_realistic": "هندسهٔ این‌جا جعبهٔ ساده با ابعاد درست است. اگر مدل واقعی‌تر می‌خواهید، فایل کامپوننت خودتان (.skp) را در تنظیمات به همان id وصل کنید — همان جعبه با کامپوننت شما جایگزین می‌شود و ابعاد و بریدگی دست‌نخورده می‌ماند.",
+
+  "groups": {
+    "appliance": { "label_fa": "لوازم برقی", "order": 1 },
+    "plumbing":  { "label_fa": "سینک و شیرآلات", "order": 2 },
+    "fitting":   { "label_fa": "متعلقات", "order": 3 }
+  },
+
+  "objects": {
+    "sink_single": {
+      "group": "plumbing", "label_fa": "سینک تک‌لگن",
+      "w": 800, "d": 500, "h": 200,
+      "mount": "counter_top", "built_in": true,
+      "cutout": { "w": 780, "d": 480, "radius_mm": 25 },
+      "min_cabinet_w": 800,
+      "unit": "عدد"
+    },
+    "sink_double": {
+      "group": "plumbing", "label_fa": "سینک دو‌لگن",
+      "w": 1200, "d": 500, "h": 200,
+      "mount": "counter_top", "built_in": true,
+      "cutout": { "w": 1180, "d": 480, "radius_mm": 25 },
+      "min_cabinet_w": 1200,
+      "unit": "عدد"
+    },
+    "hob_gas_5": {
+      "group": "appliance", "label_fa": "اجاق گاز صفحه‌ای ۵ شعله",
+      "w": 900, "d": 520, "h": 100,
+      "mount": "counter_top", "built_in": true,
+      "cutout": { "w": 860, "d": 480, "radius_mm": 15 },
+      "min_cabinet_w": 900,
+      "unit": "عدد"
+    },
+    "hob_gas_4": {
+      "group": "appliance", "label_fa": "اجاق گاز صفحه‌ای ۴ شعله",
+      "w": 600, "d": 520, "h": 100,
+      "mount": "counter_top", "built_in": true,
+      "cutout": { "w": 560, "d": 480, "radius_mm": 15 },
+      "min_cabinet_w": 600,
+      "unit": "عدد"
+    },
+    "oven_built_in": {
+      "group": "appliance", "label_fa": "فر توکار",
+      "w": 595, "d": 570, "h": 595,
+      "mount": "in_cabinet", "built_in": true,
+      "cutout": null,
+      "min_cabinet_w": 600,
+      "unit": "عدد"
+    },
+    "hood_60": {
+      "group": "appliance", "label_fa": "هود ۶۰",
+      "w": 600, "d": 500, "h": 120,
+      "mount": "wall", "built_in": false,
+      "cutout": null,
+      "min_cabinet_w": 600,
+      "unit": "عدد"
+    },
+    "hood_90": {
+      "group": "appliance", "label_fa": "هود ۹۰",
+      "w": 900, "d": 500, "h": 120,
+      "mount": "wall", "built_in": false,
+      "cutout": null,
+      "min_cabinet_w": 900,
+      "unit": "عدد"
+    },
+    "dishwasher": {
+      "group": "appliance", "label_fa": "ماشین ظرف‌شویی",
+      "w": 600, "d": 600, "h": 820,
+      "mount": "floor", "built_in": true,
+      "cutout": null,
+      "min_cabinet_w": 600,
+      "unit": "عدد"
+    },
+    "fridge": {
+      "group": "appliance", "label_fa": "یخچال",
+      "w": 700, "d": 700, "h": 1800,
+      "mount": "floor", "built_in": false,
+      "cutout": null,
+      "min_cabinet_w": 0,
+      "unit": "عدد"
+    },
+    "microwave": {
+      "group": "appliance", "label_fa": "مایکروویو توکار",
+      "w": 595, "d": 380, "h": 390,
+      "mount": "in_cabinet", "built_in": true,
+      "cutout": null,
+      "min_cabinet_w": 600,
+      "unit": "عدد"
+    },
+    "faucet": {
+      "group": "plumbing", "label_fa": "شیر ظرف‌شویی",
+      "w": 60, "d": 60, "h": 350,
+      "mount": "counter_top", "built_in": true,
+      "cutout": { "w": 35, "d": 35, "radius_mm": 17 },
+      "min_cabinet_w": 0,
+      "unit": "عدد"
+    }
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "_note": "قید بالای کابینت — آرایش و ابعاد. تنها منبع حقیقت برای لیست برش (CabinetBuilder) و مدل سه‌بعدی (CabinetGeometry). واگرایی همین اعداد بود که باعث شد دو تختهٔ قید ایستاده از سفارش متریال غایب بمانند (۳.۲۶.۰).",
+  "catalog_version": 1,
+  "_styles_note": "L = یک خوابیده + یک ایستاده | h = فقط خوابیده | none = ندارد",
+  "default_front_style": "L",
+  "default_back_style": "L",
+  "horizontal_depth_mm": 100,
+  "vertical_height_mm": 70,
+  "_railed_note": "قید فقط روی کابینت‌های زمینی معنا دارد؛ هوایی/قدی به‌جایش سقف و کف کامل دارند.",
+  "railed_templates": [
+    "base_single_door",
+    "base_sink_double_door",
+    "base_three_drawer",
+    "base_corner_diagonal"
+  ],
+  "_downgrade_note": "قید عمودیِ جلو با جعبهٔ کشو برخورد فیزیکی دارد (کشو بیرون نمی‌آید)، پس روی این تمپلیت‌ها همیشه به افقی تنزل می‌کند — هرچه در تنظیمات باشد.",
+  "front_forced_horizontal_templates": [
+    "base_three_drawer"
+  ],
+  "back_forced_none_templates": [
+    "base_corner_diagonal"
+  ],
+  "_note_back_none": "کابینت گوشه پشتش به دو دیوار است و دو پشت‌بند دارد؛ قید عقب ندارد. بدون این قاعده، لیست برش دو قید اضافه می‌داد که در مدل نبودند — یعنی متریالی خریده می‌شد که مصرف ندارد."
+}

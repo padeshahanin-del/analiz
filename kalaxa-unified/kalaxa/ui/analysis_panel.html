@@ -1,0 +1,3471 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>آنالیز کالاکسا</title>
+<style>
+  :root {
+    --gold: #b08d57; --dark: #1e1e1e; --bg: #f6f4f0;
+    --ok: #2e7d32; --warn: #e65100; --err: #c62828; --info: #1565c0;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Tahoma, "Segoe UI", sans-serif; background: var(--bg);
+         color: var(--dark); font-size: 14px; padding: 14px; }
+  header { display: flex; align-items: center; justify-content: space-between;
+           flex-wrap: wrap; gap: 8px; margin-bottom: 10px; }
+  h1 { font-size: 17px; }
+  h1 small { color: var(--gold); font-size: 12px; margin-inline-start: 8px; }
+  .toolbar { display: flex; gap: 7px; flex-wrap: wrap; }
+  button { background: var(--dark); color: #fff; border: none; padding: 8px 15px;
+           border-radius: 6px; cursor: pointer; font-family: inherit; font-size: 13px; }
+  button.primary { background: var(--gold); }
+  button:disabled { opacity: .4; cursor: default; }
+  #dev-loader { background: #fff3cd; border: 1px solid #ffe08a; padding: 10px;
+                border-radius: 6px; margin-bottom: 10px; font-size: 13px; }
+  /* تب‌ها */
+  .tabs { display: flex; gap: 2px; border-bottom: 2px solid var(--gold); margin: 10px 0 0; }
+  .tab { padding: 8px 18px; background: #e8e2d8; border-radius: 8px 8px 0 0;
+         cursor: pointer; font-size: 13px; user-select: none; }
+  .tab.active { background: var(--gold); color: #fff; font-weight: bold; }
+  .tab .badge { background: var(--err); color: #fff; border-radius: 9px;
+                font-size: 10px; padding: 1px 6px; margin-inline-start: 5px; }
+  .pane { display: none; background: #fff; border: 1px solid #e2ddd4; border-top: none;
+          border-radius: 0 0 8px 8px; padding: 14px; min-height: 200px; }
+  .pane.active { display: block; }
+  /* اجزا */
+  .cards { display: flex; gap: 10px; flex-wrap: wrap; margin: 6px 0 12px; }
+  .card { background: #faf8f5; border: 1px solid #e2ddd4; border-radius: 8px;
+          padding: 10px 14px; min-width: 175px; }
+  .card .t { font-weight: bold; font-size: 13px; }
+  .card .big { font-size: 24px; font-weight: bold; color: var(--gold); margin: 3px 0; }
+  .card .meta { font-size: 11px; color: #666; }
+  .msg { padding: 9px 13px; border-radius: 6px; margin: 5px 0; font-size: 13px; }
+  .msg.err  { background: #fdecea; color: var(--err);  border: 1px solid #f5c6c3; }
+  .msg.warn { background: #fff4e5; color: var(--warn); border: 1px solid #ffd9a8; }
+  .msg.ok   { background: #e8f5e9; color: var(--ok);   border: 1px solid #bfe3c2; }
+  .msg.info { background: #e7f0fb; color: var(--info); border: 1px solid #bcd6f2; }
+  .maps { display: flex; flex-direction: column; gap: 16px; }
+  .map-wrap { border: 1px solid #eee; border-radius: 8px; padding: 8px; overflow-x: auto; }
+  .opts { display: flex; gap: 16px; align-items: center; margin: 6px 0 10px; font-size: 13px; }
+  label { display: flex; align-items: center; gap: 5px; cursor: pointer; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0; font-size: 13px; }
+  th, td { border: 1px solid #e2ddd4; padding: 7px 10px; text-align: right; }
+  th { background: #f0ebe3; }
+  td.num { font-weight: bold; }
+  #status { font-size: 12px; color: #777; margin-top: 6px; min-height: 15px; }
+  .price-box { margin-top: 14px; padding: 12px; background: #faf8f5;
+               border: 1px dashed var(--gold); border-radius: 8px; }
+  .price-box textarea { width: 100%; height: 74px; font-family: monospace; font-size: 12px;
+                        direction: ltr; margin: 6px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>آنالیز کالاکسا <small id="app-version"></small></h1>
+  <div class="toolbar">
+    <button id="btn-scan" class="primary">اسکن مدل و آنالیز</button>
+    <button id="btn-save" disabled>ذخیره snapshot</button>
+    <button id="btn-print" disabled>چاپ نقشه‌ها</button>
+    <button id="btn-labels" disabled>برچسب قطعات</button>
+    <button id="btn-xls-parts" disabled>خروجی اکسل: فهرست برش</button>
+    <button id="btn-xls-goods" disabled>خروجی اکسل: کالا</button>
+    <button id="btn-xls-in" disabled>ورودی اکسل</button>
+  </div>
+</header>
+
+<div id="dev-loader" style="display:none">
+  حالت توسعه: فایل <b>kitchen_snapshot.json</b> —
+  <input type="file" id="dev-file" accept=".json">
+</div>
+
+<div id="messages"></div>
+
+<div class="tabs">
+  <div class="tab active" data-pane="cut">نقشه برش</div>
+  <div class="tab" data-pane="install">نقشه نصب</div>
+  <div class="tab" data-pane="cabinets">کابینت‌ها</div>
+  <div class="tab" data-pane="placement">جانمایی <span id="placement-badge" class="badge" style="display:none"></span></div>
+  <div class="tab" data-pane="material">گزارش متریال</div>
+  <div class="tab" data-pane="hardware">یراق</div>
+  <div class="tab" data-pane="price">شیت قیمت</div>
+  <div class="tab" data-pane="templates">کاتالوگ تمپلیت</div>
+  <div class="tab" data-pane="imported">قطعات خوانده‌شده <span id="imported-badge" class="badge" style="display:none"></span></div>
+  <div class="tab" data-pane="scenarios">سناریوها</div>
+  <div class="tab" data-pane="settings">تنظیمات</div>
+  <div class="tab" data-pane="rules">چک استاندارد <span id="rules-badge" class="badge" style="display:none"></span></div>
+</div>
+
+<div id="pane-cut" class="pane active">
+  <details style="margin-bottom:8px" open>
+    <summary style="cursor:pointer;font-size:13px;color:#8a6d3b">♻ انبار آفکات کارگاه — <span id="inv-summary">در حال بارگیری…</span></summary>
+    <div class="toolbar" style="margin:6px 0">
+      <label style="font-size:13px"><input type="checkbox" id="inv-use" checked> استفاده از انبار در چیدمان</label>
+      <button id="btn-harvest" disabled>برداشت آفکات‌های این نتیجه به انبار</button>
+      <button id="btn-consume" disabled>ثبت مصرف آفکات‌های این نتیجه</button>
+    </div>
+    <div id="inv-msg"></div>
+    <details><summary style="font-size:12px;cursor:pointer">ویرایش دستی JSON انبار</summary>
+      <textarea id="stock-json" style="width:100%;height:64px;font-family:monospace;font-size:12px;direction:ltr;margin:6px 0"></textarea>
+      <button id="btn-restock">اعمال و محاسبه مجدد</button>
+    </details>
+  </details>
+  <div class="opts">
+    <label><input type="checkbox" id="opt-cuts" checked> توالی برش</label>
+    <label><input type="checkbox" id="opt-offcuts" checked> آفکات‌ها</label>
+    <label><input type="checkbox" id="opt-edges" checked> علامت نوار لبه</label>
+    <label><input type="checkbox" id="opt-grooves" checked> علامت شیار</label>
+  </div>
+  <div id="cut-summary" class="cards"></div>
+  <div id="cut-maps" class="maps"></div>
+</div>
+
+<div id="pane-install" class="pane">
+  <div id="install-maps" class="maps"></div>
+  <h3 style="font-size:13px;margin-top:14px">صفحهٔ کار</h3>
+  <div id="countertop-plan"></div>
+  <h3 style="font-size:13px;margin-top:14px">لوازم و بریدگی صفحه</h3>
+  <div id="objects-plan"></div>
+</div>
+
+<div id="pane-cabinets" class="pane">
+  <div id="cab-list"></div>
+  <h3 style="font-size:14px;margin-top:10px">نمای روبه‌رو</h3>
+  <div id="cab-shapes" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end"></div>
+</div>
+
+<div id="pane-placement" class="pane">
+  <div class="msg info" style="margin-bottom:8px">
+    <b>این تب به چه درد می‌خورد؟</b><br>
+    می‌گوید هر کابینت <b>کجای آشپزخانه</b> می‌نشیند — روی کدام دیوار و در چه
+    فاصله‌ای. مدل سه‌بعدی جای کابینت را دارد، ولی نقشهٔ نصب و چک استاندارد
+    (تداخل، گپ فیلر، ترتیب روی دیوار) به همین جانمایی نیاز دارند.<br>
+    اگر کابینت‌ها را در مدل سر جایشان کشیده‌اید، «بارگیری سند از مدل» را بزنید؛
+    اگر نه، «چیدمان خودکار ردیفی» آن‌ها را پشت سر هم روی یک دیوار می‌چیند تا
+    بعداً اصلاح کنید.
+  </div>
+  <div class="opts">
+    <button id="btn-load-doc">بارگیری سند از مدل</button>
+    <button id="btn-auto-row" disabled>چیدمان خودکار ردیفی (جانمایی‌نشده‌ها)</button>
+    <label>فاصله (mm): <input id="auto-gap" type="number" value="0" min="0" step="1" style="width:70px"></label>
+    <button id="btn-save-placements" class="primary" disabled>ذخیره در مدل</button>
+    <span id="placement-status" class="meta"></span>
+  </div>
+  <div id="placement-list"></div>
+  <div class="msg info" id="placement-hint">
+    جانمایی روی «سند دامنه» ذخیره می‌شود (schema v3). نقشه نصبِ سند فقط وقتی فعال می‌شود که
+    همه یونیت‌ها جانمایی داشته باشند.
+  </div>
+</div>
+
+<div id="pane-material" class="pane">
+  <div id="mat-cards" class="cards"></div>
+  <h3 style="font-size:14px;margin-top:8px">نوار لبه</h3>
+  <div id="edge-table"></div>
+  <h3 style="font-size:14px;margin-top:14px">فهرست کالا (برگهٔ سفارش)</h3>
+  <div class="meta" style="margin-bottom:6px">
+    همان چیزی که به دست فروشنده می‌دهید. ورق <b>برگی</b> است نه متری — تعدادش از
+    نستینگ می‌آید، چون بسته به چیدمان یک مساحت ثابت می‌تواند دو برگ لازم داشته
+    باشد یا سه تا. کد کالا پایدار است تا سفارش دفعهٔ بعد با همین بخواند.
+  </div>
+  <div id="goods-table"></div>
+  <div class="price-box">
+    <b>برآورد سریع قیمت ورق/نوار/یراق</b> — جدول قیمت (JSON، اختیاری). برای شیت کامل
+    (مونتاژ، تاج/لب‌چراغ/پاخور، ورود از اکسل) تب «شیت قیمت» را ببینید:
+    <textarea id="price-json">{
+  "currency": "تومان",
+  "sheets": { "mdf_white_16": 0, "mdf_white_8": 0, "mdf_door_16": 0, "hdf_3": 0 },
+  "edge_per_m": { "mdf_white_16": 0, "mdf_door_16": 0 },
+  "hardware": { "hinge": 0, "slide_500": 0, "handle": 0, "leg": 0, "shelf_pin": 0, "minifix": 0, "dowel": 0 }
+}</textarea>
+    <button id="btn-price">محاسبه قیمت</button>
+    <div id="price-result"></div>
+  </div>
+</div>
+
+<div id="pane-hardware" class="pane">
+  <div id="hw-table"></div>
+</div>
+
+<div id="pane-price" class="pane">
+  <div class="toolbar" style="margin-bottom:8px">
+    <label>واحد پول: <input id="price-currency" type="text" style="width:70px"></label>
+    <span id="price-total" style="font-weight:bold;font-size:15px"></span>
+  </div>
+  <div id="price-groups"></div>
+  <details style="margin-top:12px" open>
+    <summary style="cursor:pointer;font-size:13px;color:#8a6d3b">شاخهٔ استاندارد تاج/لب‌چراغ/پاخور (نستینگ واقعی به‌جای متراژ خام)</summary>
+    <div style="margin-top:8px" id="trim-bar-form"></div>
+  </details>
+  <details style="margin-top:12px">
+    <summary style="cursor:pointer;font-size:13px;color:#8a6d3b">قانون طراحی «ران» تاج/لب‌چراغ/پاخور — کسر گوشه (ورودی دستی)</summary>
+    <div style="margin-top:8px" id="trim-rules-form"></div>
+  </details>
+  <details style="margin-top:12px">
+    <summary style="cursor:pointer;font-size:13px;color:#8a6d3b">شاخهٔ استاندارد پروفیل درب آلومینیومی/شیشه‌ای</summary>
+    <div style="margin-top:8px" id="door-profile-form"></div>
+  </details>
+  <details style="margin-top:12px">
+    <summary style="cursor:pointer;font-size:13px;color:#8a6d3b">ریل کمد دیواری — شاخهٔ عمومی + قیمت کیت برند</summary>
+    <div style="margin-top:8px" id="wall-rail-form"></div>
+  </details>
+  <details style="margin-top:12px">
+    <summary style="cursor:pointer;font-size:13px;color:#8a6d3b">قرنیز/مولدینگ مستقل — صفحات (ورودی دستی)</summary>
+    <div style="margin-top:8px" id="moulding-form"></div>
+  </details>
+  <details style="margin-top:12px">
+    <summary style="cursor:pointer;font-size:13px;color:#8a6d3b">نوار لبهٔ رولی — مصرف واقعی + افت هر برش</summary>
+    <div style="margin-top:8px" id="edge-roll-form"></div>
+  </details>
+  <details style="margin-top:12px">
+    <summary style="cursor:pointer;font-size:13px;color:#8a6d3b">ورود/خروج اکسل (کپی‌پیست)</summary>
+    <div style="margin-top:8px">
+      <div class="meta">۱) برای گرفتن قالب فعلی: «کپی برای اکسل» را بزنید و در اکسل Paste کنید — ستون
+        «قیمت واحد» را آن‌جا ویرایش کنید.<br>
+        ۲) برای اعمال: محدودهٔ ویرایش‌شده (شامل ستون کد) را از اکسل کپی و این‌جا Paste کنید، سپس «اعمال قیمت‌ها».</div>
+      <textarea id="price-excel" style="width:100%;height:90px;font-family:monospace;font-size:12px;direction:ltr;margin:6px 0"></textarea>
+      <div class="toolbar">
+        <button id="btn-price-copy">کپی برای اکسل</button>
+        <button id="btn-price-apply" class="primary">اعمال قیمت‌ها</button>
+      </div>
+      <div id="price-excel-msg"></div>
+    </div>
+  </details>
+</div>
+
+<div id="pane-imported" class="pane">
+  <div class="meta" style="margin-bottom:8px">
+    کابینت‌هایی که <b>خودتان</b> در اسکچاپ ساخته‌اید و با «خواندن کابینت انتخاب‌شده» وارد کرده‌اید.
+    نقش هر قطعه <b>خودکار حدس زده شده</b> — ستون «نقش» را چک و در صورت لزوم اصلاح کنید.
+    ردیف‌های زردرنگ یعنی اطمینان پایین بوده و حتماً باید نگاه کنید.
+    آستانه‌های تشخیص در تب «تنظیمات» → «قوانین آنالیز» قابل تغییرند.
+  </div>
+  <div id="imported-result"></div>
+  <div id="imported-tables"></div>
+  <h3 style="font-size:13px;margin-top:18px">نقشهٔ انفجاری</h3>
+  <div class="meta" style="margin-bottom:6px">
+    قطعات از هم باز شده‌اند تا معلوم شود چه چیزی کجا می‌نشیند. جهت باز شدن از
+    <b>موقعیت خودِ قطعه</b> می‌آید نه از نقشش، پس حتی وقتی تشخیص نقش مطمئن نیست
+    هم نقشه درست است. شمارهٔ روی هر قطعه با جدول زیر می‌خواند.
+  </div>
+  <div id="exploded-maps"></div>
+</div>
+
+<div id="pane-templates" class="pane">
+  <div class="msg info" style="margin-bottom:8px">
+    <b>این تب به چه درد می‌خورد؟</b><br>
+    هر نوع کابینتی که در مدل تکرار شده را یک «تمپلیت» می‌شناسد و به آن نام
+    کارگاهی می‌دهید — مثل «زیرسینکی ۸۰» به‌جای <code>base_sink_double_door</code>.
+    همین نام در شیت قیمت و گزارش‌ها می‌آید، و قیمت مونتاژ هر تمپلیت یک‌بار وارد
+    می‌شود نه به‌ازای هر کابینت.
+  </div>
+  <div class="meta" style="margin-bottom:8px">
+    تمپلیت‌ها از کابینت‌های همین اسکن کشف می‌شوند؛ برچسب سفارشی شما همیشه حفظ می‌شود.
+    تمپلیتی که این دور در مدل نیست هم از کاتالوگ حذف نمی‌شود (فقط با نشان «این دور نیست» مشخص می‌شود).
+  </div>
+  <div class="opts" style="margin-bottom:8px">
+    <button id="btn-pack-in">وارد کردن بستهٔ تمپلیت</button>
+    <button id="btn-pack-out">خروجی بسته</button>
+    <span class="meta">بسته یک فایل JSON است با گروه‌ها و اندازه‌های آماده.</span>
+  </div>
+  <div id="template-groups"></div>
+  <div id="template-cards" style="display:flex;flex-wrap:wrap;gap:14px;align-items:flex-start"></div>
+</div>
+
+<div id="pane-scenarios" class="pane">
+  <div class="msg info" style="margin-bottom:8px">
+    <b>این تب به چه درد می‌خورد؟</b><br>
+    می‌پرسد «<b>اگر</b> ورق را عوض کنم چند برگ کمتر مصرف می‌شود؟» — و جواب را با
+    اجرای <b>واقعی</b> برش‌خور می‌دهد، نه با تخمین. مثلاً: ورق ۲۸۰۰×۲۱۰۰ ارزان‌تر
+    است ولی شاید دو برگ بیشتر لازم شود؛ این‌جا قبل از سفارش معلوم می‌شود.<br>
+    دکمه‌های زیر را بزنید — لازم نیست چیزی بنویسید.
+  </div>
+  <div id="scenario-presets" style="display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px"></div>
+  <details style="margin-bottom:8px">
+    <summary style="cursor:pointer;font-size:12px;color:#666">سناریوی دلخواه (JSON)</summary>
+    <div style="font-size:12px;color:#666;margin:4px 0">هر سناریو یک «وصله» روی
+      اسنپ‌شات است؛ فقط همان چند مقدار عوض می‌شود و بقیه دست‌نخورده می‌ماند.</div>
+    <textarea id="scenario-json" style="width:100%;height:96px;font-family:monospace;font-size:12px;direction:ltr;margin:4px 0"></textarea>
+    <button id="btn-scenarios">اجرای سناریوی دلخواه</button>
+  </details>
+  <div id="scenario-result"></div>
+</div>
+
+<div id="pane-settings" class="pane">
+  <div style="font-size:13px;color:#666;margin-bottom:6px">
+    ورق‌ها و پارامترهای برش پروژه — در خود مدل ذخیره می‌شود و اسکن بعدی همین‌ها را می‌بیند.
+  </div>
+  <fieldset style="border:1px solid #d8cdb8;border-radius:6px;margin-bottom:8px;padding:8px">
+    <legend style="font-size:13px;padding:0 6px">ورق‌ها (متریال‌ها)</legend>
+    <div id="sheet-table"></div>
+    <div class="toolbar" style="margin-top:6px">
+      <button id="btn-sheet-add">+ افزودن ورق</button>
+      <span class="meta" id="sheet-unit-hint"></span>
+    </div>
+    <div id="sheet-msg"></div>
+  </fieldset>
+  <fieldset style="border:1px solid #d8cdb8;border-radius:6px;margin-bottom:8px;padding:8px">
+    <legend style="font-size:13px;padding:0 6px">تنظیمات پروژه</legend>
+    <div class="toolbar" style="flex-wrap:wrap;gap:10px">
+      <label>ورق بدنه: <select id="prj-body"></select>
+        <span class="meta" id="prj-body-th"></span></label>
+      <label>ورق درب: <select id="prj-door"></select>
+        <span class="meta" id="prj-door-th"></span></label>
+      <label>ورق پشت‌بند: <select id="prj-back"></select>
+        <span class="meta" id="prj-back-th"></span></label>
+      <label>ورق کف کشو: <select id="prj-dbottom"></select>
+        <span class="meta" id="prj-dbottom-th"></span></label>
+      <label>نوع ریل: <select id="prj-slide"></select></label>
+    </div>
+    <div class="toolbar" style="flex-wrap:wrap;gap:10px;margin-top:6px;border-top:1px dashed #d8cdb8;padding-top:6px">
+      <b style="font-size:12px">نوار لبه:</b>
+      <label>بدنه — ضخامت: <select id="prj-eb-body-th"></select></label>
+      <label>توضیحات: <input id="prj-eb-body-note" type="text" placeholder="مثلاً PVC سفید" style="width:110px"></label>
+      <label><input type="checkbox" id="prj-eb-body-sub"> کسر از اندازهٔ برش</label>
+      <span style="width:100%;height:0"></span>
+      <label>درب — ضخامت: <select id="prj-eb-door-th"></select></label>
+      <label>توضیحات: <input id="prj-eb-door-note" type="text" placeholder="مثلاً PVC هایگلاس" style="width:110px"></label>
+    </div>
+    <div class="toolbar" style="flex-wrap:wrap;gap:10px;margin-top:6px;border-top:1px dashed #d8cdb8;padding-top:6px">
+      <b style="font-size:12px">کد علامت روی نقشه برش و لیست قطعات (شما تعیین می‌کنید):</b>
+      <span class="meta">هر کد حداکثر ۳ نویسه، بین علائم فعال یکتا — مثلاً W برای شیار، # یا P برای نوار، F برای فارسی‌بر</span>
+      <div id="mark-inputs" style="display:flex;flex-wrap:wrap;gap:10px;width:100%"></div>
+    </div>
+    <div class="meta" style="margin-top:4px">
+      ضخامت هر بخش = ضخامت ورق انتخابی؛ تغییرها بلافاصله روی نستینگ/گزارش/یراق اعمال می‌شود
+      و با «ذخیره در مدل» ماندگار می‌شود.
+    </div>
+  </fieldset>
+  <fieldset style="border:1px solid #d8cdb8;border-radius:6px;margin-bottom:8px;padding:8px">
+    <legend style="font-size:13px;padding:0 6px">نمایش</legend>
+    <div class="toolbar" style="flex-wrap:wrap;gap:10px">
+      <label>واحد نمایش طول:
+        <select id="set-unit">
+          <option value="cm">سانتی‌متر (cm)</option>
+          <option value="mm">میلی‌متر (mm)</option>
+        </select>
+      </label>
+      <span class="meta">پیش‌فرض cm — داده‌ها داخلی mm می‌مانند</span>
+    </div>
+    <div style="margin-top:6px;font-size:13px">چیدمان تب‌ها (نمایش/ترتیب):</div>
+    <div id="tab-layout" style="display:flex;flex-direction:column;gap:2px;margin-top:4px"></div>
+  </fieldset>
+  <fieldset style="margin-bottom:8px">
+    <legend>موقعیت پنل</legend>
+    <label>پنل بچسبد به:
+      <select id="panel-side">
+        <option value="right">لبهٔ راست صفحه</option>
+        <option value="left">لبهٔ چپ صفحه</option>
+      </select>
+    </label>
+    <span class="meta">بعد از تغییر، «ذخیره در مدل» را بزنید؛ دفعهٔ بعد همان‌جا باز می‌شود.</span>
+  </fieldset>
+  <fieldset style="margin-bottom:8px">
+    <legend>قوانین آنالیز (تشخیص خودکار نقش قطعات)</legend>
+    <div class="meta" style="margin-bottom:6px">
+      این آستانه‌ها تعیین می‌کنند کالاکسا هر قطعهٔ کابینتِ ساختهٔ شما را چه چیزی بشناسد.
+      چون روش ساخت هر کارگاه فرق دارد (ضخامت پشت‌بند، ارتفاع قید، ...) هیچ‌کدام در کد ثابت نیست.
+      نتیجه را بلافاصله در تب «قطعات خوانده‌شده» می‌بینید.
+    </div>
+    <div id="analysis-rules-form"></div>
+  </fieldset>
+  <fieldset style="margin-bottom:8px">
+    <legend>یراق‌آلات</legend>
+    <div class="meta" style="margin-bottom:6px">
+      قلمی که این کارگاه استفاده نمی‌کند را خاموش کنید تا در BOM، فهرست کالا و
+      شیت قیمت نیاید. <b>نام‌ها این‌جا نیست</b> — نام هر یراق در تب
+      «واژه‌نامه» ویرایش می‌شود تا همه‌جای برنامه یکی باشد.
+      واحد متری برای دستگیره/پروفیلی که متری می‌خرید؛ طول هر عدد را هم بدهید
+      وگرنه متراژ محاسبه نمی‌شود.
+    </div>
+    <div id="hardware-catalog-form"></div>
+  </fieldset>
+  <fieldset style="margin-bottom:8px">
+    <legend>صفحهٔ کار</legend>
+    <div class="meta" style="margin-bottom:6px">
+      طول شاخه از نوع صفحه می‌آید. اگر تأمین‌کنندهٔ شما طول دیگری می‌دهد،
+      نوع تازه اضافه کنید یا همان id را با طول خودتان دوباره بنویسید.
+    </div>
+    <div id="countertop-form"></div>
+  </fieldset>
+  <fieldset style="margin-bottom:8px">
+    <legend>درب</legend>
+    <div class="meta" style="margin-bottom:6px">
+      شکل ساخت درب تعیین می‌کند چند قطعه بریده شود (تخت = یک تخته، کلاف‌وتنپوش = ۵ قطعه،
+      فریم آلومینیوم = تویی + پروفیل متری). همین اعداد هم در لیست برش و هم در مدل سه‌بعدی
+      به کار می‌روند. ضخامت درب دیگر به ضخامت بدنه گره نخورده است.
+    </div>
+    <div id="door-form"></div>
+    <span id="door-msg" class="meta"></span>
+  </fieldset>
+  <fieldset style="margin-bottom:8px">
+    <legend>واژگان کارگاه</legend>
+    <div class="meta" style="margin-bottom:6px">
+      یک مفهوم، چند اسم. هر اصطلاحی را به زبان کارگاه خودتان بنویسید — در لیست برش،
+      فاکتور یراق و گزارش‌ها همان به کار می‌رود. محاسبات دست‌نخورده می‌ماند — تغییر واژه
+      هیچ عددی را جابه‌جا نمی‌کند. خالی بگذارید تا به پیش‌فرض برگردد.
+    </div>
+    <input id="gloss-filter" type="text" placeholder="جستجوی اصطلاح…" style="width:100%;margin-bottom:6px">
+    <div id="gloss-editor" style="max-height:260px;overflow:auto"></div>
+    <button id="gloss-save" class="btn" style="margin-top:6px">ذخیرهٔ واژگان</button>
+    <span id="gloss-msg" class="meta"></span>
+  </fieldset>
+  <textarea id="settings-json" style="width:100%;height:170px;font-family:monospace;font-size:12px;direction:ltr"></textarea>
+  <div class="toolbar" style="margin-top:6px">
+    <button id="btn-settings-validate">اعتبارسنجی</button>
+    <button id="btn-settings-save" class="primary">ذخیره در مدل</button>
+    <button id="btn-settings-reset">بازگشت به پیش‌فرض</button>
+  </div>
+  <div id="settings-msg"></div>
+</div>
+
+<div id="pane-rules" class="pane">
+  <div class="msg info" style="margin-bottom:8px">
+    <b>این تب به چه درد می‌خورد؟</b><br>
+    قبل از بریدن ورق، چند اشتباه رایج را که در مدل دیده نمی‌شوند چک می‌کند:
+    کابینت‌هایی که در هم فرو رفته‌اند، ارتفاع نصب هوایی، فاصلهٔ کانتر تا زیر
+    هوایی، هوایی عمیق‌تر از زمینی، عرض غیرمدول، گپی که فیلر می‌خواهد، و کابینت
+    بدون قطعه.<br>
+    <b>خالی بودنش خبر خوبی است</b> — یعنی چیزی برای هشدار پیدا نشد. اگر هنوز
+    اسکن نزده‌اید، اول «اسکن مدل و آنالیز» را بزنید.
+  </div>
+  <div id="rules-result"></div>
+</div>
+
+<div id="status"></div>
+
+<script src="kalaxa-catalog.js"></script>
+  <script src="kalaxa-glossary.js"></script>
+  <script src="kalaxa-settings.js"></script>
+<script src="kalaxa-offcut-store.js"></script>
+<script src="kalaxa-schema.js"></script>
+<script src="kalaxa-nesting.js"></script>
+<script src="kalaxa-nesting-validator.js"></script>
+<script src="kalaxa-cutmap-svg.js"></script>
+<script src="kalaxa-install-map.js"></script>
+<script src="kalaxa-cabinet-view.js"></script>
+<script src="kalaxa-report.js"></script>
+<script src="kalaxa-rules.js"></script>
+<script src="kalaxa-hardware.js"></script>
+<script src="kalaxa-price-sheet.js"></script>
+<script src="kalaxa-linear-nesting.js"></script>
+<script src="kalaxa-door-profile.js"></script>
+<script src="kalaxa-wall-rail.js"></script>
+<script src="kalaxa-moulding.js"></script>
+<script src="kalaxa-edge-roll.js"></script>
+<script src="kalaxa-trim-rules.js"></script>
+<script src="kalaxa-part-classifier.js"></script>
+<script src="kalaxa-exploded.js"></script>
+<script src="kalaxa-goods.js"></script>
+<script src="kalaxa-adopt.js"></script>
+<script src="kalaxa-cnc-sheet.js"></script>
+<script src="kalaxa-system32.js"></script>
+<script src="kalaxa-imported-bridge.js"></script>
+<script src="kalaxa-excel.js"></script>
+<script src="kalaxa-cut-sequence.js"></script>
+<script src="kalaxa-countertop.js"></script>
+<script src="kalaxa-template-pack.js"></script>
+<script src="kalaxa-objects.js"></script>
+<script src="kalaxa-template-catalog.js"></script>
+<script src="kalaxa-placement.js"></script>
+<script src="kalaxa-scenarios.js"></script>
+<script>
+(function () {
+  'use strict';
+
+  function esc(x) { // متن آزاد کاربر (مثلاً نام متریال) → HTML امن قبل از innerHTML
+    return String(x == null ? '' : x)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  var state = { snapshot: null, nesting: null, validation: null, busy: false,
+                settings: null, invStore: KalaxaOffcutStore.emptyStore() };
+
+  function setBusy(b, label) {
+    state.busy = b;
+    ['btn-scan', 'btn-save', 'btn-print', 'btn-labels', 'btn-restock', 'btn-scenarios',
+     'btn-price', 'btn-xls-parts', 'btn-xls-goods', 'btn-xls-in']
+      .forEach(function (id) { var el = $(id); if (el) el.disabled = b || (id !== 'btn-scan' && !state.nesting); });
+    $('status').textContent = b ? (label || 'در حال پردازش…') : $('status').textContent;
+  }
+
+  function msgWithDetails(kind, text, details, parent) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + kind;
+    div.textContent = text + ' ';
+    if (details) {
+      var d = document.createElement('details');
+      d.innerHTML = '<summary style="cursor:pointer;display:inline">جزئیات فنی (قابل کپی)</summary>' +
+        '<textarea readonly style="width:100%;height:90px;font-size:11px;direction:ltr;margin-top:4px">' +
+        details.replace(/</g, '&lt;') + '</textarea>';
+      div.appendChild(d);
+    }
+    (parent || $('messages')).appendChild(div);
+  }
+  var inSketchUp = !!(window.sketchup);
+  var $ = function (id) { return document.getElementById(id); };
+  function fa(n) { return String(n).replace(/[0-9]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[+d]; }); }
+  function msg(kind, text, parent) {
+    var div = document.createElement('div');
+    div.className = 'msg ' + kind;
+    div.textContent = text;
+    (parent || $('messages')).appendChild(div);
+  }
+
+  /* ------------------------------- تب‌ها ------------------------------- */
+  document.querySelectorAll('.tab').forEach(function (tab) {
+    tab.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (t) { t.classList.remove('active'); });
+      document.querySelectorAll('.pane').forEach(function (p) { p.classList.remove('active'); });
+      tab.classList.add('active');
+      $('pane-' + tab.dataset.pane).classList.add('active');
+    });
+  });
+
+  /* ------------------------------- ورودی ------------------------------- */
+  if (!inSketchUp) {
+    $('dev-loader').style.display = 'block';
+    $('dev-file').addEventListener('change', function (e) {
+      var f = e.target.files[0];
+      if (!f) return;
+      var reader = new FileReader();
+      reader.onload = function () {
+        try { handleSnapshot(JSON.parse(reader.result)); }
+        catch (err) { msg('err', 'JSON نامعتبر: ' + err.message); }
+      };
+      reader.readAsText(f, 'utf-8');
+    });
+  }
+
+  $('btn-scan').addEventListener('click', function () {
+    if (state.busy) return; // جلوگیری از اجرای تکراری
+    if (inSketchUp) { setBusy(true, 'در حال اسکن مدل…'); window.sketchup.scan_model(); }
+    else msg('warn', 'خارج از اسکچاپ — از انتخاب فایل بالا استفاده کنید');
+  });
+
+  window.onSnapshot = function (s) {
+    try { handleSnapshot(JSON.parse(s)); }
+    catch (e) { msg('err', 'خطای خواندن snapshot: ' + e.message); }
+  };
+  window.onError = function (s) {
+    var o = {}; try { o = JSON.parse(s); } catch (e) {}
+    setBusy(false);
+    $('status').textContent = '';
+    msg('err', o.message || 'خطای ناشناخته');
+  };
+  window.onSaved = function (s) {
+    var o = {}; try { o = JSON.parse(s); } catch (e) {}
+    msg('ok', (o.kind === 'print' || o.kind === 'labels'
+      ? 'فایل در مرورگر باز شد: ' : 'ذخیره شد: ') + (o.path || ''));
+  };
+
+  /* ------------------------------ پردازش ------------------------------ */
+  function handleSnapshot(snapshot) {
+    if (state.busy && state.snapshot !== snapshot) { /* اجازه فراخوانی داخلی restock */ }
+    // نسخهٔ دست‌نخوردهٔ اسنپ‌شات نگه داشته می‌شود: اصلاح‌های کاربر روی قطعات
+    // خوانده‌شده (نام، نقش، ابعاد، نوار) باید بتوانند کل زنجیره را دوباره
+    // بسازند بدون اسکن مجدد مدل. `doHandleSnapshot` ورودی‌اش را تغییر می‌دهد،
+    // پس کپی لازم است نه ارجاع.
+    try { state.rawSnapshot = JSON.parse(JSON.stringify(snapshot)); }
+    catch (e) { state.rawSnapshot = null; }
+    setBusy(true, 'در حال محاسبه…');
+    try { return doHandleSnapshot(snapshot); }
+    finally { setBusy(false); }
+  }
+
+  // اصلاح کاربر روی قطعات خوانده‌شده → همه‌جا اثر کند.
+  //
+  // بدون این، کاربر نقش قطعه‌ای را درست می‌کرد و نقشهٔ برش همان قبلی می‌ماند —
+  // یعنی جدول یک چیز می‌گفت و کارگاه چیز دیگری می‌برید.
+  function rebuildFromImported() {
+    if (!state.rawSnapshot) return;
+    var copy;
+    try { copy = JSON.parse(JSON.stringify(state.rawSnapshot)); }
+    catch (e) { return; }
+    handleSnapshot(copy);
+  }
+
+  function doHandleSnapshot(snapshot) {
+    ['messages', 'cut-summary', 'cut-maps', 'install-maps', 'cab-list', 'cab-shapes',
+     'hw-table', 'mat-cards', 'edge-table', 'rules-result', 'price-result', 'price-groups',
+     'countertop-plan', 'objects-plan',
+     'template-cards', 'scenario-result']
+      .forEach(function (id) { $(id).innerHTML = ''; });
+
+    // کابینت‌های خوانده‌شده باید **قبل** از اعمال تنظیمات وارد شوند.
+    //
+    // `applyToSnapshot` کارهایی می‌کند که همهٔ قطعات لازم دارند: کسر ضخامت نوار
+    // از اندازهٔ برش، پیش‌فرض miter/bevel، متادیتای علائم. اگر پل بعد از آن
+    // بیاید، قطعات خوانده‌شده هیچ‌کدام را نمی‌گیرند — یعنی یک تختهٔ یکسان در
+    // کابینت ساختهٔ کالاکسا ۷۱۸ بریده می‌شود و در کابینت خوانده‌شده ۷۲۰.
+    // همان قطعه، دو اندازه، بدون هیچ هشداری.
+    snapshot = withImported(snapshot);
+
+    // اعمال تنظیمات ذخیره‌شده پروژه (ورق‌ها/kerf/نوار) روی snapshot
+    if (state.settings) {
+      var ap = KalaxaSettings.applyToSnapshot(snapshot, state.settings);
+      ap.warnings.forEach(function (w) { msg('warn', w); });
+      snapshot = ap.snapshot;
+    }
+
+    // مهاجرت به Schema v2 (قطعی) + اعتبارسنجی عمیق ورودی
+    var mig = KalaxaSchema.migrateToV2(snapshot);
+    if (!mig.snapshot) { msg('err', 'snapshot قابل مهاجرت نیست: ' + mig.notes.join('؛ ')); return; }
+    snapshot = mig.snapshot;
+    if (mig.migrated) msg('info', 'snapshot از schema v1 به v2 مهاجرت داده شد');
+
+    var sv = KalaxaSchema.validateSnapshot(snapshot);
+    sv.warnings.forEach(function (w) { msg('warn', w); });
+    if (!sv.ok) {
+      msgWithDetails('err', 'ورودی نامعتبر است — آنالیز انجام نشد (' + fa(sv.errors.length) + ' خطا)',
+        sv.errors.join('\n'));
+      return;
+    }
+
+    // اصلاح‌های اکسل **بعد** از پل اعمال می‌شوند: کد قطعهٔ کابینت‌های
+    // خوانده‌شده همان‌جا ساخته می‌شود، پس قبل از پل هنوز وجود ندارد.
+    // نگه‌داشتنشان در state یعنی با هر بازسازی (تغییر نام، نقش، تنظیمات)
+    // دوباره اعمال می‌شوند — نه اینکه یک بار اثر کنند و بعد بی‌صدا بپرند.
+    if (state.excelUpdates && Object.keys(state.excelUpdates).length &&
+        typeof KalaxaExcel !== 'undefined') {
+      var ax = KalaxaExcel.applyParts(snapshot, state.excelUpdates);
+      snapshot = ax.snapshot;
+      if (ax.missing.length) {
+        msg('warn', fa(ax.missing.length) + ' کد قطعه از اکسل در مدل پیدا نشد: ' +
+          ax.missing.slice(0, 5).join('، ') + (ax.missing.length > 5 ? ' …' : ''));
+      }
+    }
+
+    state.snapshot = snapshot;
+    (snapshot.imported_warnings || []).forEach(function (w) { msg('warn', w); });
+    (snapshot.scan_errors || []).forEach(function (e) { msg('warn', e); });
+
+    var t0 = Date.now();
+    snapshot.stock_offcuts = readStock();
+    state.nesting = KalaxaNesting.run(snapshot);
+    var nest = state.nesting;
+
+    if (nest.errors && nest.errors.length) {
+      nest.errors.forEach(function (e) { msg('err', e); });
+      return;
+    }
+    (nest.warnings || []).forEach(function (w) { msg('warn', w); });
+    (nest.unplaced || []).forEach(function (u) { msg('err', u.message_fa); });
+    // اعتبارسنج مستقل: اگر رد کند، خروجی نهایی/چاپی ممنوع است
+    state.validation = KalaxaNestingValidator.validate(snapshot, nest);
+    if (!state.validation.ok) {
+      msgWithDetails('err',
+        'اعتبارسنج مستقل نتیجه را رد کرد — نقشه برش قابل چاپ نیست (' +
+        fa(state.validation.problems.length) + ' مشکل)',
+        state.validation.problems.join('\n'));
+    } else if (nest.ok && state.validation.stats.expected_instances === 0) {
+      // «هیچ قطعه‌ای نبود» با «همه جای‌گذاری شدند» یکی نیست. پیام سبزِ موفقیت روی
+      // نتیجهٔ خالی گمراه‌کننده است — کاربر فکر می‌کند آنالیز انجام شده.
+      // مورد واقعی: کابینتی که با «خواندن کابینت انتخاب‌شده» وارد شده تا وقتی نقش
+      // قطعاتش در تب «قطعات خوانده‌شده» تأیید نشود، وارد لیست برش نمی‌شود.
+      var rawCount = ((snapshot.raw_cabinets || []).length);
+      msg('warn', rawCount > 0
+        ? 'هیچ قطعه‌ای برای برش پیدا نشد — ' + fa(rawCount) + ' کابینت خوانده‌شده دارید ' +
+          'که هنوز تأیید نشده. به تب «قطعات خوانده‌شده» بروید و نقش قطعات را تأیید کنید.'
+        : 'هیچ قطعه‌ای برای برش پیدا نشد — کابینتی در مدل نیست یا هیچ‌کدام قطعه ندارند.');
+    } else if (nest.ok) {
+      msg('ok', 'همه قطعات جای‌گذاری شدند — مجموع ' + fa(nest.total_sheets) + ' ورق — ' +
+        'تأیید اعتبارسنج مستقل ✓ (' + fa(state.validation.stats.placed_instances) + '/' +
+        fa(state.validation.stats.expected_instances) + ' نمونه)');
+    }
+
+    renderCutSummary();
+    renderCutMaps();
+    renderInstallMaps();
+    renderCabinets();
+    renderMaterial();
+    renderHardware();
+    renderPriceSheet();
+    renderTemplateCatalog();
+    renderTemplateGroups();
+    renderAnalysisRulesForm();
+    renderHardwareCatalogForm();
+    renderCountertopForm();
+    var pnl = (state.settings && state.settings.project && state.settings.project.panel) || {};
+    $('panel-side').value = pnl.side === 'left' ? 'left' : 'right';
+    renderImportedParts();
+    renderRules();
+    initScenarios();
+
+    $('status').textContent = 'کل آنالیز در ' + fa(Date.now() - t0) + ' میلی‌ثانیه — ' +
+      fa((snapshot.parts_flat || []).length) + ' ردیف قطعه، ' +
+      fa((snapshot.cabinets || []).length) + ' کابینت';
+
+    refreshInvSummary();
+    var printable = state.validation && state.validation.ok;
+    $('btn-save').disabled = false;
+    $('btn-print').disabled = !printable;
+    $('btn-labels').disabled = !printable;
+    $('btn-xls-parts').disabled = !printable;
+    $('btn-xls-goods').disabled = !printable;
+    $('btn-xls-in').disabled = !printable;
+  }
+
+  /* ----------------------------- نقشه برش ----------------------------- */
+  function renderCutSummary() {
+    var box = $('cut-summary');
+    box.innerHTML = '';
+    (state.nesting.by_sheet_type || []).forEach(function (g) {
+      var c = document.createElement('div');
+      c.className = 'card';
+      c.innerHTML = '<div class="t">' + esc(g.material || g.sheet_id) + '</div>' +
+        '<div class="big">' + fa(g.sheets_used) + ' ورق</div>' +
+        '<div class="meta">بازدهی ' + fa(g.utilization_pct) + '٪ — پرت ' + fa(g.waste_pct) + '٪</div>' +
+        '<div class="meta">استراتژی: ' + g.strategy_used + '</div>' +
+        (g.stock_offcuts_used ? '<div class="meta" style="color:var(--ok)">♻ ' +
+          fa(g.stock_offcuts_used) + ' آفکات انبار مصرف شد</div>' : '');
+      box.appendChild(c);
+    });
+  }
+
+  // نقش قطعه از روی key، همتراز ROLE_KEYS تنظیمات (برای تمایز علامت نوار بدنه/درب)
+  function roleOfKeyForEdge(key) {
+    var RK = KalaxaSettings.ROLE_KEYS;
+    if (RK.door.indexOf(key) !== -1) return 'door';
+    return 'body';
+  }
+  function cutMapOpts() {
+    var pr = (state.settings && state.settings.project) || {};
+    return {
+      unit: currentUnit(),
+      show_cuts: $('opt-cuts').checked,
+      show_offcuts: $('opt-offcuts').checked,
+      show_edges: $('opt-edges') ? $('opt-edges').checked : true,
+      show_grooves: $('opt-grooves') ? $('opt-grooves').checked : true,
+      edge_band: pr.edge_band || null,   // {body:{thickness_mm,note}, door:{...}} — برای راهنمای علائم
+      marks: pr.marks || null,           // {band_body:{code,label_fa}, ...} — کدهای کاربرتعریف
+      role_of: roleOfKeyForEdge,
+      // خطوط برش روی خودِ نقشه. جدول به‌تنهایی کافی نیست: اپراتور کنار
+      // دستگاه نمی‌تواند عدد جدول را با تصویر تطبیق بدهد.
+      cuts_for: function (layout, sheet) {
+        if (typeof KalaxaCutSequence === 'undefined') return null;
+        return KalaxaCutSequence.forLayout(layout, sheet);
+      }
+    };
+  }
+  function cutMapObjects() {
+    return KalaxaCutmapSVG.renderAll(state.nesting, state.snapshot.sheets, cutMapOpts());
+  }
+  function renderCutMaps() {
+    var box = $('cut-maps');
+    box.innerHTML = '';
+    var opts = cutMapOpts();
+    // چیدمان روی آفکات انبار (اول، با عنوان متمایز)
+    (state.nesting.by_sheet_type || []).forEach(function (g) {
+      (g.stock_layouts || []).forEach(function (l) {
+        var pseudo = { sheet_id: g.sheet_id, width_mm: l.bin_w_mm, height_mm: l.bin_h_mm, trim_margin_mm: 0 };
+        var o = Object.assign({}, opts, { title: '♻ آفکات انبار ' + (l.offcut_id || '') +
+          ' — ' + esc(g.material || g.sheet_id) + ' — بازدهی ' + fa(l.utilization_pct) + '٪' });
+        var d = document.createElement('div');
+        d.className = 'map-wrap';
+        d.style.borderColor = '#7fb98a';
+        d.innerHTML = KalaxaCutmapSVG.renderSheet(l, pseudo, o);
+        box.appendChild(d);
+      });
+    });
+    // نقشه می‌گوید قطعه **کجاست**؛ دستور برش می‌گوید **به چه ترتیبی** ببُری.
+    // اپراتور پانل‌بر با «کجا» کار نمی‌کند: یک برش سراسری می‌زند، ورق دو تکه
+    // می‌شود، بعد هر تکه را جدا می‌بَرد.
+    var sheetById = {};
+    (state.snapshot.sheets || []).forEach(function (sh) { sheetById[sh.sheet_id] = sh; });
+    // جفت‌کردن با **کلید**، نه با اندیس: `renderAll` گروهی را که ورقش در
+    // کاتالوگ نیست کنار می‌گذارد، پس اندیس‌ها جابه‌جا می‌شوند و دستور برشِ یک
+    // ورق زیر نقشهٔ ورق دیگری می‌نشیند — بدون هیچ خطایی.
+    var layoutByKey = {};
+    (state.nesting.by_sheet_type || []).forEach(function (g) {
+      (g.layouts || []).forEach(function (l) {
+        layoutByKey[g.sheet_id + '#' + l.sheet_index] = { layout: l, sheet_id: g.sheet_id };
+      });
+    });
+
+    cutMapObjects().forEach(function (m) {
+      var d = document.createElement('div');
+      d.className = 'map-wrap';
+      d.innerHTML = m.svg;
+      var pair = layoutByKey[m.sheet_id + '#' + m.sheet_index];
+      if (pair && typeof KalaxaCutSequence !== 'undefined') {
+        var seq = KalaxaCutSequence.forLayout(pair.layout, sheetById[pair.sheet_id] || {});
+        var det = document.createElement('details');
+        det.innerHTML = '<summary style="cursor:pointer;font-size:12px">دستور برش ' +
+          (seq.ok ? '(' + fa(seq.cuts.length) + ' برش)' : '— اجرانشدنی') + '</summary>' +
+          KalaxaCutSequence.tableHtml(seq);
+        d.appendChild(det);
+      }
+      box.appendChild(d);
+    });
+  }
+
+  function readStock() {
+    var out = [];
+    if ($('inv-use') && $('inv-use').checked) {
+      out = out.concat(KalaxaOffcutStore.toStockOffcuts(state.invStore));
+    }
+    var el = $('stock-json');
+    if (el && el.value.trim()) {
+      try {
+        var a = JSON.parse(el.value);
+        if (Array.isArray(a)) out = out.concat(a);
+      } catch (e) { msg('warn', 'JSON دستی آفکات نامعتبر — نادیده گرفته شد'); }
+    }
+    return out;
+  }
+
+  function refreshInvSummary() {
+    var st = KalaxaOffcutStore.stats(state.invStore);
+    var el = $('inv-summary');
+    if (el) el.textContent = fa(st.available) + ' آفکات آماده (' + fa(st.available_area_m2) +
+      ' m²) — ' + fa(st.consumed) + ' مصرف‌شده';
+    var has = !!state.nesting;
+    if ($('btn-harvest')) $('btn-harvest').disabled = !has;
+    if ($('btn-consume')) $('btn-consume').disabled = !has ||
+      !(state.nesting.total_stock_offcuts_used > 0);
+  }
+
+  function persistInventory() {
+    var json = JSON.stringify(state.invStore, null, 1);
+    if (inSketchUp) window.sketchup.save_offcut_inventory(json);
+  }
+
+  window.onOffcutInventory = function (s) {
+    var o = {}; try { o = JSON.parse(s); } catch (e) {}
+    var n = KalaxaOffcutStore.normalize(o.store_json ? JSON.parse(o.store_json) : null);
+    state.invStore = n.store;
+    n.warnings.forEach(function (w) { msg('warn', 'انبار: ' + w, $('inv-msg')); });
+    refreshInvSummary();
+  };
+
+  // واژه‌نامهٔ کارگاه — روی ترجمهٔ زبان فعال می‌نشیند. تا نرسیدنش،
+  // KalaxaGlossary.current() هر کلید را خودش برمی‌گرداند — هیچ موتوری نمی‌شکند.
+  // کاتالوگ دامنه — همان JSON‌هایی که Ruby می‌خواند. پنل فایل محلی را نمی‌تواند
+  // با fetch بخواند، پس تزریق می‌شود. باید پیش از هر رندری برسد.
+  window.onCatalog = function (s) {
+    var o = {}; try { o = JSON.parse(s); } catch (e) { return; }
+    if (!KalaxaCatalog.load(o)) {
+      msg('err', 'کاتالوگ دامنه ناقص رسید — شکل درب و متریال ممکن است درست نباشد');
+      return;
+    }
+    state.catalog = KalaxaCatalog;
+    renderDoorForm();   // فهرست شکل‌ها از کاتالوگ می‌آید
+  };
+
+  window.onGlossary = function (s) {
+    var o = {}; try { o = JSON.parse(s); } catch (e) { return; }
+    KalaxaGlossary.load(o);
+    state.glossary = KalaxaGlossary.current();
+    renderGlossaryEditor();
+    renderDoorForm();   // برچسب شکل‌ها از واژه‌نامه می‌آید
+    // نام یراق داخل BOM کش شده است؛ با عوض‌شدن واژه‌نامه باید دوباره ساخته شود.
+    if (state.snapshot) { state.hwBom = null; handleSnapshot(state.snapshot); }
+  };
+
+  // ویرایشگر واژگان — کلیدهای قابل ویرایش را گروه‌بندی‌شده نشان می‌دهد.
+  // متن رابط (panel./about./error.) عمداً نمی‌آید — کارِ مترجم است، نه کارگاه.
+  var GLOSS_GROUPS = [
+    ['part.', 'قطعات'], ['hw.', 'یراق'], ['material.', 'متریال'],
+    ['door_shape.', 'شکل درب'], ['template.', 'نوع کابینت'], ['category.', 'دسته'],
+    ['slide.', 'ریل کشو'], ['handle.', 'دستگیره'], ['unit.', 'واحد'], ['term.', 'اصطلاحات']
+  ];
+
+  // --- فرم درب ---
+  // فهرست شکل‌ها و ضخامت‌های مجاز از KalaxaSettings.DOOR_SHAPES می‌آید — همان فهرستی که
+  // test_door_shapes.js تضمین می‌کند با lib/door_shapes.rb یکی بماند. برچسب‌ها از واژه‌نامه،
+  // پس همین فرم هم با تغییر واژگان کارگاه عوض می‌شود.
+  var DOOR_NUM_FIELDS = [
+    ['frame_width_mm', 'عرض کلاف', 'فقط کلاف‌وتنپوش و فریم آلومینیوم'],
+    ['panel_thickness_mm', 'ضخامت تنپوش', 'فقط کلاف‌وتنپوش'],
+    ['groove_depth_mm', 'عمق شیار', 'جایی که تنپوش داخلش می‌نشیند']
+  ];
+
+  function doorCfg() {
+    var st = state.settings || KalaxaSettings.defaults();
+    return Object.assign({}, KalaxaSettings.defaults().project.doors, (st.project || {}).doors || {});
+  }
+
+  function doorShapeLabel(id) {
+    return state.glossary ? state.glossary.t('door_shape.' + id, id) : id;
+  }
+
+  function renderDoorForm() {
+    var host = $('door-form');
+    if (!host) return;
+    var cfg = doorCfg();
+    var shapes = KalaxaSettings.DOOR_SHAPES;
+    var ids = Object.keys(shapes);
+    var shape = shapes[cfg.shape] ? cfg.shape : ids[0];
+    var allowed = shapes[shape];
+
+    var html = '<label>شکل درب <select id="door-shape">' +
+      ids.map(function (id) {
+        return '<option value="' + esc(id) + '"' + (id === shape ? ' selected' : '') + '>' +
+          esc(doorShapeLabel(id)) + '</option>';
+      }).join('') + '</select></label> ';
+
+    // ضخامت‌های مجاز همین شکل + گزینهٔ «پیش‌فرض» (۰) و «دلخواه».
+    // عدد خارج از فهرست رد نمی‌شود — کارگاه ممکن است ورق غیرمتداول داشته باشد.
+    var t = Number(cfg.thickness_mm) || 0;
+    var custom = t > 0 && allowed.indexOf(t) === -1;
+    html += '<label>ضخامت <select id="door-thick">' +
+      '<option value="0"' + (t === 0 ? ' selected' : '') + '>پیش‌فرض این شکل</option>' +
+      allowed.map(function (mm) {
+        return '<option value="' + mm + '"' + (mm === t ? ' selected' : '') + '>' + fa(mm) + ' mm</option>';
+      }).join('') +
+      '<option value="custom"' + (custom ? ' selected' : '') + '>دلخواه…</option>' +
+      '</select></label> ' +
+      '<input id="door-thick-custom" type="number" min="1" step="1" value="' + (custom ? t : '') +
+      '" style="width:80px' + (custom ? '' : ';display:none') + '" placeholder="mm"> ';
+
+    DOOR_NUM_FIELDS.forEach(function (f) {
+      html += '<label title="' + esc(f[2]) + '">' + esc(f[1]) +
+        ' <input data-door="' + f[0] + '" type="number" min="0" step="1" value="' +
+        (Number(cfg[f[0]]) || 0) + '" style="width:80px"></label> ';
+    });
+
+    html += '<div class="meta" style="margin-top:4px">۰ یعنی «چیزی نگفته‌ام» — پیش‌فرض همان شکل استفاده می‌شود.</div>';
+    host.innerHTML = html;
+  }
+
+  function writeDoorCfg(patch) {
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    var next = Object.assign({}, doorCfg(), patch);
+    state.settings.project = currentProjectPatch({ doors: next });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    var v = KalaxaSettings.validate(state.settings);
+    (v.warnings || []).forEach(function (w) { msg('warn', w, $('door-msg')); });
+    if (!v.ok) msg('err', v.errors[0], $('door-msg'));
+    renderDoorForm();
+    return next;
+  }
+
+  $('door-form').addEventListener('change', function (e) {
+    var t = e.target;
+    if (t.id === 'door-shape') {
+      // فهرست ضخامت به شکل وابسته است؛ با عوض‌شدن شکل، ضخامت به پیش‌فرض برمی‌گردد مگر
+      // همان عدد در شکل تازه هم مجاز باشد — وگرنه یک عدد بی‌ربط بی‌صدا می‌ماند.
+      var cur = Number(doorCfg().thickness_mm) || 0;
+      var allowed = KalaxaSettings.DOOR_SHAPES[t.value] || [];
+      writeDoorCfg({ shape: t.value, thickness_mm: allowed.indexOf(cur) !== -1 ? cur : 0 });
+      return;
+    }
+    if (t.id === 'door-thick') {
+      if (t.value === 'custom') { $('door-thick-custom').style.display = ''; $('door-thick-custom').focus(); return; }
+      writeDoorCfg({ thickness_mm: Number(t.value) || 0 });
+      return;
+    }
+    if (t.id === 'door-thick-custom') {
+      writeDoorCfg({ thickness_mm: Math.max(0, Number(t.value) || 0) });
+      return;
+    }
+    var f = t.closest ? t.closest('input[data-door]') : null;
+    if (f) {
+      var patch = {};
+      patch[f.dataset.door] = Math.max(0, Number(f.value) || 0);
+      writeDoorCfg(patch);
+    }
+  });
+
+  function renderGlossaryEditor() {
+    var host = $('gloss-editor');
+    if (!host || !state.glossary) return;
+    var g = state.glossary;
+    var filter = ($('gloss-filter').value || '').trim();
+    var html = '';
+
+    GLOSS_GROUPS.forEach(function (grp) {
+      var prefix = grp[0];
+      var keys = g.editableKeys().filter(function (k) { return k.indexOf(prefix) === 0; });
+      if (filter) {
+        keys = keys.filter(function (k) {
+          return k.indexOf(filter) !== -1 || String(g.t(k)).indexOf(filter) !== -1;
+        });
+      }
+      if (!keys.length) return;
+      html += '<div style="margin:6px 0 2px;font-weight:bold">' + esc(grp[1]) + '</div>';
+      keys.forEach(function (k) {
+        var val = g.t(k);
+        var alts = g.suggestions(k);
+        var changed = g.isOverridden(k);
+        html += '<div style="display:flex;gap:6px;align-items:center;margin-bottom:3px">' +
+          '<span class="meta" style="flex:0 0 150px;direction:ltr;text-align:left">' + esc(k) + '</span>' +
+          '<input class="gloss-in" data-key="' + esc(k) + '" value="' + esc(val) + '" style="flex:1"' +
+            (changed ? ' title="تغییر داده شده"' : '') + '>' +
+          (changed ? '<span title="تغییر داده شده">●</span>' : '<span style="width:8px"></span>') +
+          (alts.length ? '<span class="meta" style="flex:0 0 auto">' +
+             alts.map(function (a) {
+               return '<a href="#" class="gloss-alt" data-key="' + esc(k) + '" data-val="' + esc(a) + '">' + esc(a) + '</a>';
+             }).join(' ، ') + '</span>' : '') +
+          '</div>';
+      });
+    });
+
+    host.innerHTML = html || '<div class="meta">چیزی پیدا نشد.</div>';
+
+    Array.prototype.forEach.call(host.querySelectorAll('.gloss-alt'), function (a) {
+      a.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        var inp = host.querySelector('.gloss-in[data-key="' + a.getAttribute('data-key') + '"]');
+        if (inp) { inp.value = a.getAttribute('data-val'); inp.focus(); }
+      });
+    });
+  }
+
+  function collectGlossaryOverrides() {
+    var out = {};
+    Array.prototype.forEach.call(document.querySelectorAll('.gloss-in'), function (inp) {
+      out[inp.getAttribute('data-key')] = inp.value;
+    });
+    return out;
+  }
+
+  window.onSettings = function (s) {
+    var o = {}; try { o = JSON.parse(s); } catch (e) {}
+    var st = null;
+    if (o.settings_json) { try { st = JSON.parse(o.settings_json); } catch (e) {} }
+    state.settings = st || KalaxaSettings.defaults();
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    syncSettingsUI();
+  };
+
+  // بارگیری اولیه از Ruby؛ در حالت توسعه پیش‌فرض‌ها
+  // پنل را به لبهٔ راست/چپ صفحه بچسبان. ابعاد نمایشگر فقط از JS در دسترس است
+  // (Ruby API اسکچاپ متدی برای آن ندارد)، پس همین‌جا به Ruby گزارش می‌شود.
+  function dockPanel() {
+    if (!inSketchUp || !window.sketchup.dock_panel) return;
+    try { window.sketchup.dock_panel(screen.availWidth, screen.availHeight); } catch (e) {}
+  }
+
+  // تب «قطعات خوانده‌شده» تا پیش از این فقط بعد از اسکن رسم می‌شد — پس کاربری که
+  // کابینت را می‌خواند و مستقیم روی تب می‌رفت، صفحهٔ **کاملاً خالی** می‌دید: نه
+  // جدول، نه راهنما. حالا حالت خالی از همان ابتدا رسم می‌شود تا تب همیشه خودش را
+  // توضیح بدهد.
+  renderImportedParts();
+  // همان درس برای «سناریوها»: کاربر گفت «خالی هست، کاربردش رو هم نمی‌دونم».
+  // دکمه‌های آماده باید از ابتدا دیده شوند — یا دست‌کم بگویند اول اسکن کن.
+  renderScenarioPresets();
+
+  if (inSketchUp) {
+    dockPanel();
+    window.sketchup.load_catalog();
+    window.sketchup.load_glossary();
+    window.sketchup.load_settings();
+    window.sketchup.load_offcut_inventory();
+  } else {
+    state.settings = KalaxaSettings.defaults();
+    setTimeout(function () {
+      $('settings-json').value = JSON.stringify(state.settings, null, 2);
+      syncSettingsUI();
+      refreshInvSummary();
+    }, 0);
+  }
+  $('opt-cuts').addEventListener('change', renderCutMaps);
+  $('opt-offcuts').addEventListener('change', renderCutMaps);
+  $('opt-edges').addEventListener('change', renderCutMaps);
+  $('opt-grooves').addEventListener('change', renderCutMaps);
+
+  /* ----------------------------- کابینت‌ها ----------------------------- */
+  function currentUnit() { return KalaxaSettings.displayUnit(state.settings); }
+
+  function renderCabinets() {
+    if (!state.snapshot) return;
+    var unit = currentUnit();
+    var CV = KalaxaCabinetView;
+    var sum = CV.summarize(state.snapshot);
+    sum.warnings.forEach(function (w) { msg('warn', w); });
+
+    var rows = sum.cabinets.map(function (c, i) {
+      var mats = c.materials.map(function (m) {
+        return esc(m.sheet_id) + ' (' + fa(m.qty) + ' قطعه، ' + fa(m.area_m2) + ' m²)';
+      }).join('، ') || '—';
+      return '<tr><td class="num">' + fa(i + 1) + '</td>' +
+        '<td>' + esc(c.label_fa) + '</td>' +
+        '<td>' + esc(c.category_fa) + '</td>' +
+        '<td class="num" style="direction:ltr">' + CV.fmtLen(c.w_mm, unit) + '×' +
+          CV.fmtLen(c.h_mm, unit) + '×' + CV.fmtLen(c.d_mm, unit) + '</td>' +
+        '<td class="num">' + fa(c.doors) + '</td>' +
+        '<td class="num">' + fa(c.drawer_fronts) + '</td>' +
+        '<td class="num">' + fa(c.shelf_count) + '</td>' +
+        '<td>' + (c.door_type ? esc(c.door_type) : '—') + '</td>' +
+        '<td class="num">' + fa(c.parts_qty) + '</td>' +
+        '<td>' + mats + '</td></tr>';
+    }).join('');
+    $('cab-list').innerHTML = sum.cabinets.length
+      ? '<table><tr><th>#</th><th>کابینت</th><th>دسته</th><th>ابعاد (' +
+        (unit === 'mm' ? 'mm' : 'cm') + ' — ع×ا×عمق)</th><th>درب</th><th>کشو</th>' +
+        '<th>طبقه</th><th>نوع درب</th><th>قطعات</th><th>متریال</th></tr>' + rows + '</table>'
+      : '<div class="msg info">کابینتی در snapshot نیست</div>';
+
+    $('cab-shapes').innerHTML = sum.cabinets.map(function (c) {
+      return '<div>' + CV.frontSVG(c, { unit: unit }) + '</div>';
+    }).join('');
+  }
+
+  /* ----------------------------- نقشه نصب ----------------------------- */
+  function installMapObjects() {
+    return KalaxaInstallMap.renderAll(state.snapshot, { counter_top_mm: 40, unit: currentUnit() });
+  }
+  // صفحهٔ کار از همان دیوارهایی که نقشهٔ نصب می‌سازد.
+  //
+  // ماژولی که به پنل وصل نشود، ماژولی است که هیچ‌کس نمی‌بیند — و این پروژه
+  // یک بار همین را با `manualParts` تجربه کرد.
+  function renderCountertop(maps) {
+    var box = $('countertop-plan');
+    if (!box || typeof KalaxaCountertop === 'undefined') return;
+    var pr = (state.settings && state.settings.project) || {};
+    var runs = KalaxaCountertop.runsFromWalls((maps || []).map(function (m) { return m.wall; }));
+    if (!runs.length) {
+      box.innerHTML = '<div class="msg info">کابینت زمینی‌ای برای صفحهٔ کار نیست. ' +
+        'صفحه فقط روی کابینت زمینی می‌نشیند — هوایی و قدی ندارند.</div>';
+      return;
+    }
+    var res = KalaxaCountertop.plan(runs, pr.countertop || {});
+    box.innerHTML = (res.warnings || []).map(function (w) {
+      return '<div class="msg warn">' + esc(w) + '</div>';
+    }).join('') + KalaxaCountertop.tableHtml(res);
+  }
+
+  // لوازم از اسنپ‌شات می‌آیند (ابزار «افزودن لوازم» آن‌ها را در مدل گذاشته).
+  //
+  // بدون این، کاتالوگ لوازم موتوری بود بدون راه — همان چیزی که یک بار با
+  // «قطعات دستی» تجربه شد.
+  function renderObjects() {
+    var box = $('objects-plan');
+    if (!box || typeof KalaxaObjects === 'undefined') return;
+    var objs = (state.snapshot && state.snapshot.objects) || [];
+    if (!objs.length) {
+      box.innerHTML = '<div class="msg info">لوازمی در مدل نیست. از منوی کالاکسا ' +
+        '«افزودن لوازم (سینک، اجاق، فر…)» را بزنید — سینک و اجاق بریدگی صفحه ' +
+        'می‌خواهند و همین‌جا اندازه‌اش را می‌گیرید.</div>';
+      return;
+    }
+
+    var pr = (state.settings && state.settings.project) || {};
+    // آبجکتِ ساخته‌شده ابعادش را با خودش دارد؛ کاتالوگ فقط برای چیزهایی است
+    // که در مدل نیستند. پس همان را به‌عنوان custom پاس می‌دهیم تا اگر
+    // کاتالوگ بعداً عوض شد، سینکِ دیروز عوض نشود.
+    var cfg = { custom_objects: (pr.objects && pr.objects.custom_objects || [])
+      .concat(objs.map(function (o) {
+        return { id: o.object_id, group: o.group, label_fa: o.label_fa,
+                 w: o.w_mm, d: o.d_mm, h: o.h_mm, mount: o.mount,
+                 cutout: o.cutout, min_cabinet_w: o.min_cabinet_w, unit: o.unit };
+      })) };
+
+    // آبجکت را به کابینتِ زیرش وصل کن — وگرنه هشدار «جا نمی‌شود» هرگز
+    // فعال نمی‌شود، چون `cabinet_id` خالی می‌ماند.
+    var att = KalaxaObjects.attach(objs, state.snapshot.cabinets || []);
+    var res = KalaxaObjects.plan(
+      att.objects.map(function (o) {
+        return { object_id: o.object_id, cabinet_id: o.cabinet_id };
+      }),
+      state.snapshot.cabinets || [], cfg);
+    res.warnings = (att.warnings || []).concat(res.warnings || []);
+
+    box.innerHTML = (res.warnings || []).map(function (w) {
+      return '<div class="msg warn">' + esc(w) + '</div>';
+    }).join('') +
+      '<table><tr><th>کالا</th><th>گروه</th><th>تعداد</th><th>واحد</th></tr>' +
+      res.items.map(function (i) {
+        return '<tr><td>' + esc(i.name_fa) + '</td><td class="meta">' +
+          esc(i.group_fa || '—') + '</td><td class="num">' + fa(i.qty) +
+          '</td><td>' + esc(i.unit) + '</td></tr>';
+      }).join('') + '</table>' +
+      KalaxaObjects.cutoutTableHtml(res);
+  }
+
+  function renderInstallMaps() {
+    var box = $('install-maps');
+    box.innerHTML = '';
+    var maps = installMapObjects();
+    if (!maps.length) {
+      msg('info', 'کابینتی برای نقشه نصب پیدا نشد', box);
+      renderCountertop([]);   // وگرنه جدول صفحهٔ کارِ اسکن قبلی روی صفحه می‌ماند
+      renderObjects();
+      return;
+    }
+    maps.forEach(function (m) {
+      var d = document.createElement('div');
+      d.className = 'map-wrap';
+      d.innerHTML = m.svg;
+      box.appendChild(d);
+    });
+    renderCountertop(maps);
+    renderObjects();
+  }
+
+  /* --------------------------- گزارش متریال --------------------------- */
+  function renderMaterial() {
+    var ms = KalaxaReport.materialSummary(state.snapshot, state.nesting);
+    var box = $('mat-cards');
+    box.innerHTML = '';
+    ms.rows.forEach(function (r) {
+      var c = document.createElement('div');
+      c.className = 'card';
+      c.innerHTML = '<div class="t">' + esc(r.material || r.sheet_id) + '</div>' +
+        '<div class="big">' + fa(r.sheets_used) + ' ورق</div>' +
+        '<div class="meta">سطح قطعات: ' + fa(r.parts_area_m2) + ' m² — وزن ~' + fa(r.weight_kg) + ' kg</div>';
+      box.appendChild(c);
+    });
+    var tot = document.createElement('div');
+    tot.className = 'card';
+    tot.style.borderColor = 'var(--gold)';
+    tot.innerHTML = '<div class="t">جمع پروژه</div>' +
+      '<div class="big">~' + fa(ms.total_weight_kg) + ' kg</div>' +
+      '<div class="meta">' + fa(ms.total_area_m2) + ' m² قطعه — چگالی فرض ' +
+      fa(ms.density_assumed_kg_m3) + ' kg/m³</div>';
+    box.appendChild(tot);
+
+    var eb = KalaxaReport.edgeBanding(state.snapshot);
+    var rows = eb.by_sheet.map(function (r) {
+      return '<tr><td>' + esc(r.material || r.sheet_id) + '</td><td class="num">' + fa(r.meters) +
+        '</td><td class="num">' + fa(r.meters_with_waste) + '</td></tr>';
+    }).join('');
+    $('edge-table').innerHTML =
+      '<table><tr><th>رنگ/ورق</th><th>متراژ خالص (m)</th><th>با ۵٪ اضافه (m)</th></tr>' +
+      rows +
+      '<tr><th>جمع</th><th>' + fa(eb.total_m) + '</th><th>' + fa(eb.total_m_with_waste) + '</th></tr></table>';
+
+    renderGoods(eb);
+  }
+
+  /* ------------------------------ فهرست کالا ------------------------------ */
+  // گزارش متریال می‌گوید «۴٫۷ متر مربع MDF» — که **قابل سفارش نیست**. این برگه
+  // همان را به چیزی تبدیل می‌کند که به دست فروشنده می‌دهید: برگ، متر، عدد.
+  function renderGoods(eb) {
+    var host = $('goods-table');
+    if (!host) return;
+    var bom = state.hwBom ||
+      hardwareBom();
+    var g = KalaxaGoods.build(state.snapshot, state.nesting, eb, bom, goodsOpts());
+
+    var warn = (g.warnings || []).map(function (w) {
+      return '<div class="msg warn">' + esc(w) + '</div>';
+    }).join('');
+    if (!g.rows.length) { host.innerHTML = warn; return; }
+
+    var section = function (key) {
+      var list = g.groups[key] || [];
+      if (!list.length) return '';
+      return '<tr><th colspan="6" style="text-align:right;background:#f2efe8">' +
+        esc(KalaxaGoods.GROUP_LABELS_FA[key]) + '</th></tr>' +
+        list.map(function (r) {
+          return '<tr><td class="meta">' + esc(r.code) + '</td>' +
+            '<td>' + esc(r.name) + '</td>' +
+            '<td class="meta">' + esc(r.spec) + '</td>' +
+            '<td class="num"><b>' + fa(r.qty) + '</b>' +
+            (r.qty_spare ? '<div class="meta">' + fa(r.qty_base) + ' + ' +
+                           fa(r.qty_spare) + ' ذخیره</div>' : '') + '</td>' +
+            '<td>' + esc(r.unit) + '</td>' +
+            '<td class="meta">' + esc(r.note) + (r.exact ? '' : ' (تخمینی)') + '</td></tr>';
+        }).join('');
+    };
+
+    host.innerHTML = warn +
+      (g.estimated
+        ? '<div class="msg info">سطرهای «تخمینی» گرد شده‌اند و پرت در آن‌ها لحاظ شده — ' +
+          'قبل از سفارش با کارگاه چک کنید.</div>'
+        : '') +
+      '<table><tr><th>کد</th><th>کالا</th><th>مشخصات</th><th>تعداد</th>' +
+      '<th>واحد</th><th>توضیح</th></tr>' +
+      section('sheet') + section('edge') + section('hardware') + '</table>';
+  }
+
+  function goodsOpts() {
+    var pr = (state.settings && state.settings.project) || {};
+    return pr.goods || {};
+  }
+
+  $('btn-price').addEventListener('click', function () {
+    var box = $('price-result');
+    box.innerHTML = '';
+    if (!state.snapshot) return;
+    var pt;
+    try { pt = JSON.parse($('price-json').value); }
+    catch (e) { msg('err', 'JSON جدول قیمت نامعتبر: ' + e.message, box); return; }
+    var pe = KalaxaReport.priceEstimate(state.snapshot, state.nesting, pt);
+    if (pt.hardware && state.hwBom) {
+      var hp = KalaxaHardware.price(state.hwBom, pt);
+      pe.lines = pe.lines.concat(hp.lines);
+      pe.total = Math.round((pe.total + hp.total) * 100) / 100;
+      pe.complete = pe.complete || hp.lines.some(function (l) { return l.unit_price > 0; });
+    }
+    var rows = pe.lines.map(function (l) {
+      return '<tr><td>' + l.label_fa + '</td><td class="num">' +
+        fa(l.unit_price.toLocaleString('en-US')) + '</td><td class="num">' +
+        fa(l.cost.toLocaleString('en-US')) + '</td></tr>';
+    }).join('');
+    box.innerHTML = '<table><tr><th>ردیف</th><th>قیمت واحد</th><th>جمع</th></tr>' + rows +
+      '<tr><th colspan="2">جمع کل</th><th>' + fa(pe.total.toLocaleString('en-US')) +
+      ' ' + pe.currency + '</th></tr></table>' +
+      (pe.complete ? '' : '<div class="msg warn">برخی قیمت‌ها صفرند — جدول را کامل کنید</div>');
+  });
+
+  /* -------------------------------- شیت قیمت -------------------------------- */
+  function priceSheetCfg() {
+    var pr = (state.settings && state.settings.project) || {};
+    return pr.price_sheet || KalaxaSettings.defaults().project.price_sheet;
+  }
+  function setPriceSheetCfg(cfg) {
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    state.settings.project = currentProjectPatch({ price_sheet: cfg });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+  }
+
+  function renderPriceSheet() {
+    if (!state.snapshot) return;
+    $('price-result').innerHTML = '';
+    var cfg = priceSheetCfg();
+    $('price-currency').value = cfg.currency || 'تومان';
+    var hwBom = state.hwBom || hardwareBom();
+    state.priceSheet = KalaxaPriceSheet.build(state.snapshot, state.nesting, hwBom, cfg,
+      KalaxaLinearNesting, KalaxaDoorProfile, KalaxaWallRail, KalaxaMoulding, KalaxaEdgeRoll, KalaxaTrimRules);
+    var ps = state.priceSheet;
+
+    // توجه: 'trim' عمداً این‌جا نیست — برچسبش پویاست (بسته به فعال‌بودن قانون ران از
+    // خودِ g.label_fa خوانده می‌شود، نه این نگاشت ثابت).
+    var GROUP_HEAD = { sheet: 'ورق‌ها', info: 'اطلاعاتی', hardware: 'یراق', edge: 'نوار لبه',
+                       assembly: 'مونتاژ',
+                       door_profile: 'پروفیل درب آلومینیومی/شیشه‌ای', wall_rail: 'ریل کمد دیواری',
+                       moulding: 'قرنیز/مولدینگ مستقل (از صفحات واردشدهٔ دستی)',
+                       edge_roll: 'نوار لبهٔ رولی (مصرف واقعی + افت هر برش)' };
+    var html = ps.groups.filter(function (g) { return g.rows.length; }).map(function (g) {
+      var rows = g.rows.map(function (r) {
+        var priced = r.cost != null;
+        return '<tr data-code="' + esc(r.code) + '">' +
+          '<td>' + esc(r.label_fa) + '</td>' +
+          '<td class="num">' + fa(r.qty) + ' ' + esc(r.unit) + '</td>' +
+          (priced
+            ? '<td class="num"><input data-price="' + esc(r.code) + '" type="number" min="0" ' +
+              'value="' + (r.unit_price || 0) + '" style="width:100px"></td>' +
+              '<td class="num">' + fa(r.cost.toLocaleString('en-US')) + '</td>'
+            : '<td class="num">—</td><td class="num">—</td>') +
+          '</tr>';
+      }).join('');
+      return '<h3 style="font-size:13px;margin-top:10px">' + esc(GROUP_HEAD[g.key] || g.label_fa) + '</h3>' +
+        '<table><tr><th>ردیف</th><th>تعداد</th><th>قیمت واحد</th><th>جمع</th></tr>' + rows + '</table>';
+    }).join('');
+    $('price-groups').innerHTML = html || '<div class="msg info">داده‌ای برای قیمت‌گذاری نیست</div>';
+    $('price-total').textContent = 'جمع کل: ' + fa(ps.total.toLocaleString('en-US')) + ' ' + ps.currency;
+
+    if (ps.new_assembly_keys.length) {
+      msg('info', fa(ps.new_assembly_keys.length) + ' نوع کابینت تازه بدون قیمت مونتاژ — ' +
+        'یک‌بار در تب «شیت قیمت» پر کنید تا دیگر خالی نیاید', $('price-result'));
+    }
+    (ps.warnings || []).forEach(function (w) { msg('warn', w, $('price-result')); });
+
+    renderTrimBarForm(cfg);
+    renderDoorProfileForm(cfg);
+    renderWallRailForm(cfg);
+    renderMouldingForm(cfg);
+    renderEdgeRollForm(cfg);
+    renderTrimRulesForm(cfg);
+  }
+
+  var TRIM_CATS = [['crown', 'تاج'], ['light_rail', 'لب‌چراغ'], ['kick', 'پاخور']];
+  function renderTrimBarForm(cfg) {
+    var trim = cfg.trim || {};
+    $('trim-bar-form').innerHTML = '<div class="meta" style="margin-bottom:6px">' +
+      'طول شاخهٔ استاندارد (mm) را برای هرکدام پر کنید تا به‌جای متراژ خام، تعداد شاخهٔ واقعی ' +
+      '(با کرف و پرت واقعی) محاسبه شود. خالی = همان متراژ خام قبلی.</div>' +
+      '<table><tr><th>ردیف</th><th>طول شاخه (mm)</th><th>کرف (mm)</th></tr>' +
+      TRIM_CATS.map(function (c) {
+        var key = c[0], label = c[1];
+        return '<tr><td>' + label + '</td>' +
+          '<td class="num"><input data-trim-bar="' + key + '" type="number" min="0" ' +
+          'value="' + (trim[key + '_bar_length_mm'] || '') + '" placeholder="مثلاً 2500" style="width:100px"></td>' +
+          '<td class="num"><input data-trim-kerf="' + key + '" type="number" min="0" ' +
+          'value="' + (trim[key + '_kerf_mm'] != null ? trim[key + '_kerf_mm'] : '') + '" placeholder="3" style="width:80px"></td></tr>';
+      }).join('') + '</table>';
+  }
+  $('trim-bar-form').addEventListener('change', function (e) {
+    var barInp = e.target.closest('input[data-trim-bar]');
+    var kerfInp = e.target.closest('input[data-trim-kerf]');
+    var key = barInp ? barInp.dataset.trimBar : (kerfInp ? kerfInp.dataset.trimKerf : null);
+    if (!key) return;
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.trim = cfg.trim || {};
+    if (barInp) cfg.trim[key + '_bar_length_mm'] = Math.max(0, Number(barInp.value) || 0);
+    if (kerfInp) cfg.trim[key + '_kerf_mm'] = Math.max(0, Number(kerfInp.value) || 0);
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+
+  var DOOR_PROFILE_KINDS = [['plain', 'بدون دستگیره (۳ ضلع هر درب)'], ['handle', 'سمت دستگیره (۱ ضلع هر درب)']];
+  function renderDoorProfileForm(cfg) {
+    var dp = cfg.door_profile || {};
+    $('door-profile-form').innerHTML = '<div class="meta" style="margin-bottom:6px">' +
+      'دو نوع پروفیل جدا (SKU مستقل) — بدون دستگیره و سمت دستگیره؛ هرکدام شاخهٔ استاندارد و کرف خودش را دارد. ' +
+      'خالی = ردیف فقط اطلاعاتی می‌ماند (بدون قیمت).</div>' +
+      '<table><tr><th>نوع</th><th>طول شاخه (mm)</th><th>کرف (mm)</th></tr>' +
+      DOOR_PROFILE_KINDS.map(function (c) {
+        var key = c[0], label = c[1];
+        return '<tr><td>' + label + '</td>' +
+          '<td class="num"><input data-dp-bar="' + key + '" type="number" min="0" ' +
+          'value="' + (dp[key + '_bar_length_mm'] || '') + '" placeholder="مثلاً 6000" style="width:100px"></td>' +
+          '<td class="num"><input data-dp-kerf="' + key + '" type="number" min="0" ' +
+          'value="' + (dp[key + '_kerf_mm'] != null ? dp[key + '_kerf_mm'] : '') + '" placeholder="3" style="width:80px"></td></tr>';
+      }).join('') + '</table>';
+  }
+  $('door-profile-form').addEventListener('change', function (e) {
+    var barInp = e.target.closest('input[data-dp-bar]');
+    var kerfInp = e.target.closest('input[data-dp-kerf]');
+    var key = barInp ? barInp.dataset.dpBar : (kerfInp ? kerfInp.dataset.dpKerf : null);
+    if (!key) return;
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.door_profile = cfg.door_profile || {};
+    if (barInp) cfg.door_profile[key + '_bar_length_mm'] = Math.max(0, Number(barInp.value) || 0);
+    if (kerfInp) cfg.door_profile[key + '_kerf_mm'] = Math.max(0, Number(kerfInp.value) || 0);
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+
+  var TRIM_RULE_KINDS = [['crown', 'تاج'], ['light_rail', 'لب‌چراغ'], ['kick', 'پاخور']];
+  function renderTrimRulesForm(cfg) {
+    var tr = cfg.trim_rules || {};
+    var runs = tr.runs || [];
+    var cabs = (state.snapshot && state.snapshot.cabinets) || [];
+    function cabCheckboxes(runIdx, selectedIds) {
+      if (!cabs.length) return '<div class="meta">مدلی اسکن نشده — کابینتی برای انتخاب نیست</div>';
+      return cabs.map(function (c) {
+        var checked = selectedIds.indexOf(c.kalaxa_id) !== -1 ? 'checked' : '';
+        return '<label style="display:inline-block;margin:2px 8px 2px 0;font-size:12px">' +
+          '<input type="checkbox" data-tr-cab="' + runIdx + ':' + esc(c.kalaxa_id) + '" ' + checked + '> ' +
+          esc(c.label_fa || c.kalaxa_id) + '</label>';
+      }).join('');
+    }
+    $('trim-rules-form').innerHTML = '<div class="meta" style="margin-bottom:6px">' +
+      'هر «ران» = گروهی از کابینت‌های پشت‌سرهم که یک نوار پیوسته می‌سازند. طول واقعی = جمع عرض ' +
+      'کابینت‌های ران − (تعداد گوشه × کسر هر گوشه). خالی = همان متراژ خام قبلی (سازگاری عقب‌رو).</div>' +
+      '<div class="meta" style="margin-bottom:6px">کسر پیش‌فرض سراسری هر گوشه (mm) — وقتی رانی خودش ' +
+      'کسر جداگانه تعیین نکرده: <input id="tr-default-deduction" type="number" min="0" value="' +
+      (tr.default_deduction_mm || 0) + '" style="width:80px"></div>' +
+      runs.map(function (run, i) {
+        return '<div data-tr-row="' + i + '" style="border:1px solid #ddd;padding:6px;margin-bottom:6px;border-radius:4px">' +
+          '<div style="margin-bottom:4px">' +
+          '<input data-tr-f="label_fa" type="text" placeholder="برچسب ران" value="' + esc(run.label_fa || '') + '" style="width:130px">' +
+          ' <select data-tr-f="category">' + TRIM_RULE_KINDS.map(function (k) {
+            return '<option value="' + k[0] + '"' + (run.category === k[0] ? ' selected' : '') + '>' + k[1] + '</option>';
+          }).join('') + '</select>' +
+          ' گوشه: <input data-tr-f="corners" type="number" min="0" value="' + (run.corners || 0) + '" style="width:50px">' +
+          ' کسر این ران (mm): <input data-tr-f="deduction_mm" type="number" min="0" value="' +
+          (run.deduction_mm != null ? run.deduction_mm : '') + '" placeholder="پیش‌فرض سراسری" style="width:100px">' +
+          ' <button type="button" data-tr-del="' + i + '">حذف ران</button></div>' +
+          '<div>' + cabCheckboxes(i, run.cabinet_ids || []) + '</div></div>';
+      }).join('') +
+      '<button type="button" id="btn-tr-add">+ افزودن ران</button>';
+  }
+  $('trim-rules-form').addEventListener('click', function (e) {
+    var del = e.target.closest('button[data-tr-del]');
+    var add = e.target.closest('#btn-tr-add');
+    if (!del && !add) return;
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.trim_rules = cfg.trim_rules || {}; cfg.trim_rules.runs = cfg.trim_rules.runs || [];
+    if (add) cfg.trim_rules.runs.push({ id: 'run-' + Date.now() + '-' + cfg.trim_rules.runs.length,
+      category: 'crown', label_fa: '', cabinet_ids: [], corners: 0 });
+    if (del) cfg.trim_rules.runs.splice(Number(del.dataset.trDel), 1);
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+  $('trim-rules-form').addEventListener('change', function (e) {
+    var fInp = e.target.closest('input[data-tr-f], select[data-tr-f]');
+    var cabInp = e.target.closest('input[data-tr-cab]');
+    var defInp = e.target.closest('#tr-default-deduction');
+    if (!fInp && !cabInp && !defInp) return;
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.trim_rules = cfg.trim_rules || {}; cfg.trim_rules.runs = cfg.trim_rules.runs || [];
+    if (defInp) cfg.trim_rules.default_deduction_mm = Math.max(0, Number(defInp.value) || 0);
+    if (fInp) {
+      var row = fInp.closest('div[data-tr-row]');
+      var idx = Number(row.dataset.trRow);
+      var field = fInp.dataset.trF;
+      cfg.trim_rules.runs[idx] = cfg.trim_rules.runs[idx] || {};
+      cfg.trim_rules.runs[idx][field] = (field === 'label_fa' || field === 'category')
+        ? fInp.value : Math.max(0, Number(fInp.value) || 0);
+    }
+    if (cabInp) {
+      var parts = cabInp.dataset.trCab.split(':');
+      var runIdx = Number(parts[0]), cabId = parts.slice(1).join(':');
+      var run = cfg.trim_rules.runs[runIdx];
+      if (run) {
+        run.cabinet_ids = run.cabinet_ids || [];
+        var pos = run.cabinet_ids.indexOf(cabId);
+        if (cabInp.checked && pos === -1) run.cabinet_ids.push(cabId);
+        else if (!cabInp.checked && pos !== -1) run.cabinet_ids.splice(pos, 1);
+      }
+    }
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+
+  var WALL_RAIL_KINDS = [['plain', 'ساده'], ['edged', 'لبه‌دار']];
+  var WALL_RAIL_KIT_BRANDS = [['blum', 'بلوم'], ['fantoni', 'فانتونی'], ['meleni', 'ملونی']];
+  function renderWallRailForm(cfg) {
+    var wr = cfg.wall_rail || {};
+    var kits = wr.kits || {};
+    $('wall-rail-form').innerHTML =
+      '<div class="meta" style="margin-bottom:6px">ریل عمومی ساده/لبه‌دار — با تعیین شاخه، به‌جای قطعه، ' +
+      'شاخهٔ واقعی محاسبه می‌شود:</div>' +
+      '<table><tr><th>نوع</th><th>طول شاخه (mm)</th><th>کرف (mm)</th></tr>' +
+      WALL_RAIL_KINDS.map(function (c) {
+        var key = c[0], label = c[1];
+        return '<tr><td>' + label + '</td>' +
+          '<td class="num"><input data-wr-bar="' + key + '" type="number" min="0" ' +
+          'value="' + (wr[key + '_bar_length_mm'] || '') + '" placeholder="مثلاً 2500" style="width:100px"></td>' +
+          '<td class="num"><input data-wr-kerf="' + key + '" type="number" min="0" ' +
+          'value="' + (wr[key + '_kerf_mm'] != null ? wr[key + '_kerf_mm'] : '') + '" placeholder="3" style="width:80px"></td></tr>';
+      }).join('') + '</table>' +
+      '<div class="meta" style="margin:6px 0">قیمت کیت کامل مکانیزم برند — به‌ازای هر کمد (نه طول):</div>' +
+      '<table><tr><th>برند</th><th>قیمت هر کمد</th></tr>' +
+      WALL_RAIL_KIT_BRANDS.map(function (c) {
+        var key = c[0], label = c[1];
+        return '<tr><td>' + label + '</td>' +
+          '<td class="num"><input data-wr-kit="' + key + '" type="number" min="0" ' +
+          'value="' + (kits[key] || 0) + '" style="width:100px"></td></tr>';
+      }).join('') + '</table>';
+  }
+  $('wall-rail-form').addEventListener('change', function (e) {
+    var barInp = e.target.closest('input[data-wr-bar]');
+    var kerfInp = e.target.closest('input[data-wr-kerf]');
+    var kitInp = e.target.closest('input[data-wr-kit]');
+    if (!barInp && !kerfInp && !kitInp) return;
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.wall_rail = cfg.wall_rail || {};
+    if (barInp) cfg.wall_rail[barInp.dataset.wrBar + '_bar_length_mm'] = Math.max(0, Number(barInp.value) || 0);
+    if (kerfInp) cfg.wall_rail[kerfInp.dataset.wrKerf + '_kerf_mm'] = Math.max(0, Number(kerfInp.value) || 0);
+    if (kitInp) {
+      cfg.wall_rail.kits = cfg.wall_rail.kits || {};
+      cfg.wall_rail.kits[kitInp.dataset.wrKit] = Math.max(0, Number(kitInp.value) || 0);
+    }
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+
+  function renderMouldingForm(cfg) {
+    var mld = cfg.moulding || {};
+    var boards = mld.boards || [];
+    $('moulding-form').innerHTML =
+      '<div class="meta" style="margin-bottom:6px">هر ردیف = یک صفحه (کانترتاپ/قرنیز مستقل). قرنیز = ' +
+      'یک نوار به‌طول صفحه + به‌ازای هر «برگشت» یک قطعهٔ کوتاه به‌عرض صفحه.</div>' +
+      '<table><tr><th>برچسب</th><th>طول (mm)</th><th>عرض (mm)</th><th>تعداد برگشت</th><th></th></tr>' +
+      boards.map(function (b, i) {
+        return '<tr data-mld-row="' + i + '">' +
+          '<td><input data-mld-f="label_fa" type="text" value="' + esc(b.label_fa || '') + '" style="width:100px"></td>' +
+          '<td class="num"><input data-mld-f="length_mm" type="number" min="0" value="' + (b.length_mm || '') + '" style="width:80px"></td>' +
+          '<td class="num"><input data-mld-f="width_mm" type="number" min="0" value="' + (b.width_mm || '') + '" style="width:80px"></td>' +
+          '<td class="num"><input data-mld-f="returns" type="number" min="0" value="' + (b.returns || 0) + '" style="width:60px"></td>' +
+          '<td><button type="button" data-mld-del="' + i + '">حذف</button></td></tr>';
+      }).join('') + '</table>' +
+      '<button type="button" id="btn-mld-add" style="margin-top:6px">+ افزودن صفحه</button>' +
+      '<div class="meta" style="margin:6px 0">شاخهٔ استاندارد قرنیز:</div>' +
+      '<table><tr><th>طول شاخه (mm)</th><th>کرف (mm)</th></tr>' +
+      '<tr><td class="num"><input id="mld-bar-length" type="number" min="0" value="' + (mld.bar_length_mm || '') +
+      '" placeholder="مثلاً 2500" style="width:100px"></td>' +
+      '<td class="num"><input id="mld-kerf" type="number" min="0" value="' +
+      (mld.kerf_mm != null ? mld.kerf_mm : '') + '" placeholder="3" style="width:80px"></td></tr></table>';
+  }
+  $('moulding-form').addEventListener('click', function (e) {
+    var del = e.target.closest('button[data-mld-del]');
+    var add = e.target.closest('#btn-mld-add');
+    if (!del && !add) return;
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.moulding = cfg.moulding || {}; cfg.moulding.boards = cfg.moulding.boards || [];
+    if (add) cfg.moulding.boards.push({ label_fa: '', length_mm: 0, width_mm: 0, returns: 0 });
+    if (del) cfg.moulding.boards.splice(Number(del.dataset.mldDel), 1);
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+  $('moulding-form').addEventListener('change', function (e) {
+    var fInp = e.target.closest('input[data-mld-f]');
+    var barInp = e.target.closest('#mld-bar-length');
+    var kerfInp = e.target.closest('#mld-kerf');
+    if (!fInp && !barInp && !kerfInp) return;
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.moulding = cfg.moulding || {}; cfg.moulding.boards = cfg.moulding.boards || [];
+    if (fInp) {
+      var row = fInp.closest('tr[data-mld-row]');
+      var idx = Number(row.dataset.mldRow);
+      var field = fInp.dataset.mldF;
+      cfg.moulding.boards[idx] = cfg.moulding.boards[idx] || {};
+      cfg.moulding.boards[idx][field] = field === 'label_fa' ? fInp.value : Math.max(0, Number(fInp.value) || 0);
+    }
+    if (barInp) cfg.moulding.bar_length_mm = Math.max(0, Number(barInp.value) || 0);
+    if (kerfInp) cfg.moulding.kerf_mm = Math.max(0, Number(kerfInp.value) || 0);
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+
+  function renderEdgeRollForm(cfg) {
+    var er = cfg.edge_roll || {};
+    $('edge-roll-form').innerHTML = '<div class="meta" style="margin-bottom:6px">' +
+      'برخلاف «نوار لبه» بالا (متری/برش‌خورده)، این‌جا مصرف واقعی رول حساب می‌شود — به‌ازای ' +
+      'هر برش (هر ضلع نوارخورده روی هر قطعه) یک افت ثابت روی طول واقعی اضافه می‌شود.</div>' +
+      '<table><tr><th>افت هر برش (mm)</th><th>قیمت هر متر — بدنه</th><th>قیمت هر متر — درب</th></tr>' +
+      '<tr><td class="num"><input id="er-waste" type="number" min="0" value="' +
+      (er.waste_mm != null ? er.waste_mm : 50) + '" style="width:80px"></td>' +
+      '<td class="num"><input id="er-body-price" type="number" min="0" value="' +
+      (er.body_price_per_m || 0) + '" style="width:100px"></td>' +
+      '<td class="num"><input id="er-door-price" type="number" min="0" value="' +
+      (er.door_price_per_m || 0) + '" style="width:100px"></td></tr></table>';
+  }
+  $('edge-roll-form').addEventListener('change', function (e) {
+    var wasteInp = e.target.closest('#er-waste');
+    var bodyInp = e.target.closest('#er-body-price');
+    var doorInp = e.target.closest('#er-door-price');
+    if (!wasteInp && !bodyInp && !doorInp) return;
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.edge_roll = cfg.edge_roll || {};
+    if (wasteInp) cfg.edge_roll.waste_mm = Math.max(0, Number(wasteInp.value) || 0);
+    if (bodyInp) cfg.edge_roll.body_price_per_m = Math.max(0, Number(bodyInp.value) || 0);
+    if (doorInp) cfg.edge_roll.door_price_per_m = Math.max(0, Number(doorInp.value) || 0);
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+
+  $('price-groups').addEventListener('change', function (e) {
+    var inp = e.target.closest('input[data-price]');
+    if (!inp) return;
+    var code = inp.dataset.price;
+    var val = Math.max(0, Number(inp.value) || 0);
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    if (code === 'edge_body') cfg.edge_body_per_m = val;
+    else if (code === 'edge_door') cfg.edge_door_per_m = val;
+    else if (code === 'crown' || code === 'light_rail' || code === 'kick') {
+      cfg.trim = cfg.trim || {};
+      // اگر شاخهٔ استاندارد تنظیم شده، این ردیف واحدش «شاخه» است → قیمت هر شاخه؛ وگرنه قیمت هر متر
+      var field = (Number(cfg.trim[code + '_bar_length_mm']) || 0) > 0 ? '_price_per_bar' : '_per_m';
+      cfg.trim[code + field] = val;
+    } else if (code === 'door_profile_plain' || code === 'door_profile_handle') {
+      cfg.door_profile = cfg.door_profile || {};
+      cfg.door_profile[(code === 'door_profile_plain' ? 'plain' : 'handle') + '_price_per_bar'] = val;
+    } else if (code === 'wall_rail_plain' || code === 'wall_rail_edged') {
+      cfg.wall_rail = cfg.wall_rail || {};
+      cfg.wall_rail[(code === 'wall_rail_plain' ? 'plain' : 'edged') + '_price_per_bar'] = val;
+    } else if (code.indexOf('wall_rail_kit:') === 0) {
+      cfg.wall_rail = cfg.wall_rail || {};
+      cfg.wall_rail.kits = cfg.wall_rail.kits || {};
+      cfg.wall_rail.kits[code.slice(14)] = val;
+    } else if (code === 'moulding') {
+      cfg.moulding = cfg.moulding || {}; cfg.moulding.price_per_bar = val;
+    } else if (code === 'edge_roll_body' || code === 'edge_roll_door') {
+      cfg.edge_roll = cfg.edge_roll || {};
+      cfg.edge_roll[(code === 'edge_roll_body' ? 'body' : 'door') + '_price_per_m'] = val;
+    } else if (code.indexOf('assembly:') === 0) {
+      cfg.assembly = cfg.assembly || {}; cfg.assembly[code.slice(9)] = val;
+    } else if (code.indexOf('door_area:') === 0) {
+      // اطلاعاتی — ورودی قیمت ندارد
+    } else if (/^slide_\d+$/.test(code) || ['hinge', 'handle', 'leg', 'shelf_pin', 'minifix', 'dowel'].indexOf(code) !== -1 ||
+               code.indexOf('explicit_') === 0) {
+      cfg.hardware = cfg.hardware || {}; cfg.hardware[code] = val;
+    } else {
+      cfg.sheets = cfg.sheets || {}; cfg.sheets[code] = val; // باقی کدها = sheet_id
+    }
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+
+  $('price-currency').addEventListener('change', function () {
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    cfg.currency = this.value || 'تومان';
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+  });
+
+  $('btn-price-copy').addEventListener('click', function () {
+    if (!state.priceSheet) return;
+    var tsv = KalaxaPriceSheet.exportTSV(state.priceSheet);
+    $('price-excel').value = tsv;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(tsv).then(function () {
+        msg('ok', 'در حافظه کپی شد — در اکسل Paste کنید', $('price-excel-msg'));
+      }, function () {
+        msg('info', 'متن در کادر آماده است — دستی کپی کنید (Ctrl+A سپس Ctrl+C)', $('price-excel-msg'));
+      });
+    } else {
+      msg('info', 'متن در کادر آماده است — دستی کپی کنید (Ctrl+A سپس Ctrl+C)', $('price-excel-msg'));
+    }
+  });
+
+  $('btn-price-apply').addEventListener('click', function () {
+    if (!state.priceSheet) return;
+    $('price-excel-msg').innerHTML = '';
+    var codes = KalaxaPriceSheet.priceableRows(state.priceSheet).map(function (r) { return r.code; });
+    var parsed = KalaxaPriceSheet.parsePastedTable($('price-excel').value, codes);
+    var n = Object.keys(parsed.prices).length;
+    if (!n) { msg('warn', 'هیچ ردیف معتبری پیدا نشد — قالب TSV/CSV را بررسی کنید', $('price-excel-msg')); return; }
+    var cfg = JSON.parse(JSON.stringify(priceSheetCfg()));
+    Object.keys(parsed.prices).forEach(function (code) {
+      var val = parsed.prices[code];
+      if (code === 'edge_body') cfg.edge_body_per_m = val;
+      else if (code === 'edge_door') cfg.edge_door_per_m = val;
+      else if (code === 'crown' || code === 'light_rail' || code === 'kick') {
+        cfg.trim = cfg.trim || {};
+        var field = (Number(cfg.trim[code + '_bar_length_mm']) || 0) > 0 ? '_price_per_bar' : '_per_m';
+        cfg.trim[code + field] = val;
+      } else if (code === 'door_profile_plain' || code === 'door_profile_handle') {
+        cfg.door_profile = cfg.door_profile || {};
+        cfg.door_profile[(code === 'door_profile_plain' ? 'plain' : 'handle') + '_price_per_bar'] = val;
+      } else if (code === 'wall_rail_plain' || code === 'wall_rail_edged') {
+        cfg.wall_rail = cfg.wall_rail || {};
+        cfg.wall_rail[(code === 'wall_rail_plain' ? 'plain' : 'edged') + '_price_per_bar'] = val;
+      } else if (code.indexOf('wall_rail_kit:') === 0) {
+        cfg.wall_rail = cfg.wall_rail || {};
+        cfg.wall_rail.kits = cfg.wall_rail.kits || {};
+        cfg.wall_rail.kits[code.slice(14)] = val;
+      } else if (code === 'moulding') {
+        cfg.moulding = cfg.moulding || {}; cfg.moulding.price_per_bar = val;
+      } else if (code === 'edge_roll_body' || code === 'edge_roll_door') {
+        cfg.edge_roll = cfg.edge_roll || {};
+        cfg.edge_roll[(code === 'edge_roll_body' ? 'body' : 'door') + '_price_per_m'] = val;
+      } else if (code.indexOf('assembly:') === 0) {
+        cfg.assembly = cfg.assembly || {}; cfg.assembly[code.slice(9)] = val;
+      } else if (/^slide_\d+$/.test(code) || ['hinge', 'handle', 'leg', 'shelf_pin', 'minifix', 'dowel'].indexOf(code) !== -1 ||
+                 code.indexOf('explicit_') === 0) {
+        cfg.hardware = cfg.hardware || {}; cfg.hardware[code] = val;
+      } else {
+        cfg.sheets = cfg.sheets || {}; cfg.sheets[code] = val;
+      }
+    });
+    setPriceSheetCfg(cfg);
+    renderPriceSheet();
+    var warnUnmatched = parsed.unmatched.length
+      ? ' — ' + fa(parsed.unmatched.length) + ' کد ناشناخته نادیده گرفته شد' : '';
+    msg('ok', fa(n) + ' قیمت اعمال شد' + warnUnmatched + ' — برای ماندگاری «ذخیره در مدل» را در تب تنظیمات بزنید',
+      $('price-excel-msg'));
+  });
+
+  /* ------------------------------ کاتالوگ تمپلیت ------------------------------ */
+  /* ----------------------- فرم قوانین آنالیز (تنظیمات) ----------------------- */
+  var ANALYSIS_RULE_LABELS = {
+    max_panel_thickness_mm: 'حداکثر ضخامت ورق (mm) — ضخیم‌تر = ورق نیست',
+    thin_sheet_max_mm: 'مرز ورق نازک (mm) — پشت‌بند ۳/۸ میل',
+    rail_max_depth_mm: 'حداکثر عمق/ارتفاع قید (mm)',
+    edge_tolerance_mm: 'رواداری «چسبیده به لبه» (mm)',
+    nearly_full_ratio: 'نسبت «تقریباً تمام‌عرض» (۰ تا ۱)',
+    drawer_front_max_height_ratio: 'نمای کوتاه‌تر از این نسبتِ ارتفاع = کشو (۰ تا ۱)'
+  };
+  /* --------------------------- صفحهٔ کار --------------------------- */
+  function countertopCfg() {
+    var pr = (state.settings && state.settings.project) || {};
+    return pr.countertop || KalaxaSettings.defaults().project.countertop;
+  }
+
+  function renderCountertopForm() {
+    var box = $('countertop-form');
+    if (!box || typeof KalaxaCountertop === 'undefined') return;
+    var cfg = countertopCfg();
+    var list = KalaxaCountertop.types(cfg);
+    var opts = list.map(function (t) {
+      return '<option value="' + esc(t.id) + '"' +
+        (cfg.type_id === t.id ? ' selected' : '') + '>' + esc(t.label_fa) +
+        ' — ' + fa(Math.round(t.bar_length_mm / 10)) + ' cm</option>';
+    }).join('');
+
+    box.innerHTML =
+      '<table><tr><td>نوع صفحه</td><td><select data-ct="type_id">' + opts +
+        '</select></td></tr>' +
+      '<tr><td>بیرون‌زدگی جلو (mm)</td><td class="num"><input type="number" min="0" ' +
+        'data-ct="overhang_front_mm" value="' + (cfg.overhang_front_mm || 0) +
+        '" style="width:70px"></td></tr>' +
+      '<tr><td>بیرون‌زدگی سرِ آزاد (mm)</td><td class="num"><input type="number" min="0" ' +
+        'data-ct="overhang_side_mm" value="' + (cfg.overhang_side_mm || 0) +
+        '" style="width:70px"></td></tr>' +
+      '<tr><td>گوشه</td><td><select data-ct="corner_joint">' +
+        '<option value="miter"' + (cfg.corner_joint !== 'butt' ? ' selected' : '') +
+          '>فارسی ۴۵°</option>' +
+        '<option value="butt"' + (cfg.corner_joint === 'butt' ? ' selected' : '') +
+          '>اتصال مستقیم</option></select></td></tr>' +
+      '<tr><td>کمینهٔ طول تکه (mm)</td><td class="num"><input type="number" min="0" ' +
+        'data-ct="min_piece_mm" value="' + (cfg.min_piece_mm || 0) +
+        '" style="width:70px"></td></tr></table>' +
+      '<div style="margin-top:6px">' +
+      '<input id="ct-new-label" placeholder="نام نوع تازه" style="width:150px"> ' +
+      '<input id="ct-new-len" type="number" min="1" placeholder="طول (cm)" style="width:90px"> ' +
+      '<button id="ct-add">افزودن نوع</button></div>';
+  }
+
+  $('countertop-form').addEventListener('change', function (e) {
+    var el = e.target.closest('[data-ct]');
+    if (!el) return;
+    var cur = JSON.parse(JSON.stringify(countertopCfg()));
+    var k = el.dataset.ct;
+    cur[k] = (k === 'type_id' || k === 'corner_joint')
+      ? el.value : Math.max(0, Math.round(Number(el.value) || 0));
+    saveCountertop(cur);
+  });
+
+  $('countertop-form').addEventListener('click', function (e) {
+    if (e.target.id !== 'ct-add') return;
+    var label = ($('ct-new-label').value || '').trim();
+    // ورودی به **سانتی‌متر** است چون کارگاه با همین حرف می‌زند («صفحهٔ ۴۱۰»).
+    var cm = Number($('ct-new-len').value) || 0;
+    if (!label || cm <= 0) {
+      msg('warn', 'نام و طول نوع تازه لازم است', $('settings-msg'));
+      return;
+    }
+    var cur = JSON.parse(JSON.stringify(countertopCfg()));
+    cur.custom_types = (cur.custom_types || []).concat([{
+      id: 'custom_' + Date.now(), label_fa: label,
+      bar_length_mm: Math.round(cm * 10), sold_by: 'bar'
+    }]);
+    cur.type_id = cur.custom_types[cur.custom_types.length - 1].id;
+    $('ct-new-label').value = '';
+    $('ct-new-len').value = '';
+    saveCountertop(cur);
+  });
+
+  function saveCountertop(cur) {
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    state.settings.project = currentProjectPatch({ countertop: cur });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    renderCountertopForm();
+    // اثرش باید فوراً در نقشهٔ نصب دیده شود، نه بعد از اسکن بعدی.
+    if (state.snapshot) rebuildFromImported();
+  }
+
+  /* --------------------------- کاتالوگ یراق --------------------------- */
+  var HW_UNITS = [['piece', 'عدد'], ['pair', 'جفت'], ['m', 'متر']];
+
+  function hardwareCatalog() {
+    var pr = (state.settings && state.settings.project) || {};
+    return pr.hardware_catalog || KalaxaSettings.defaults().project.hardware_catalog;
+  }
+
+  function renderHardwareCatalogForm() {
+    var cat = hardwareCatalog();
+    var rows = Object.keys(cat).map(function (id) {
+      var c = cat[id] || {};
+      // نام از واژه‌نامه — همان منبعی که BOM از آن می‌خواند.
+      var name = (state.glossary && typeof state.glossary.hardware === 'function')
+        ? state.glossary.hardware(id, id) : id;
+      var units = HW_UNITS.map(function (u) {
+        return '<option value="' + u[0] + '"' +
+          ((c.unit || 'piece') === u[0] ? ' selected' : '') + '>' + u[1] + '</option>';
+      }).join('');
+      return '<tr><td><label><input type="checkbox" data-hw="' + esc(id) +
+          '" data-hw-f="enabled"' + (c.enabled === false ? '' : ' checked') + '> ' +
+          esc(name) + '</label></td>' +
+        '<td><select data-hw="' + esc(id) + '" data-hw-f="unit">' + units + '</select></td>' +
+        '<td class="num">' + (c.unit === 'm'
+          ? '<input type="number" min="0" step="1" data-hw="' + esc(id) +
+            '" data-hw-f="length_mm" value="' + (c.length_mm || 0) +
+            '" style="width:80px"> mm'
+          : '<span class="meta">—</span>') + '</td></tr>';
+    }).join('');
+    $('hardware-catalog-form').innerHTML =
+      '<table><tr><th>قلم</th><th>واحد</th><th>طول هر عدد</th></tr>' + rows + '</table>';
+  }
+
+  $('hardware-catalog-form').addEventListener('change', function (e) {
+    var el = e.target.closest('[data-hw]');
+    if (!el) return;
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    var cur = JSON.parse(JSON.stringify(hardwareCatalog()));
+    var id = el.dataset.hw, f = el.dataset.hwF;
+    cur[id] = cur[id] || {};
+    if (f === 'enabled') cur[id].enabled = el.checked;
+    else if (f === 'unit') cur[id].unit = el.value;
+    else cur[id].length_mm = Math.max(0, Math.round(Number(el.value) || 0));
+    state.settings.project = currentProjectPatch({ hardware_catalog: cur });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    renderHardwareCatalogForm();
+    // اثرش باید فوراً در یراق و شیت قیمت دیده شود، نه بعد از اسکن بعدی.
+    if (state.snapshot) { state.hwBom = null; rebuildFromImported(); }
+  });
+
+  function renderAnalysisRulesForm() {
+    var r = analysisRules();
+    $('analysis-rules-form').innerHTML = '<table><tr><th>قانون</th><th>مقدار</th></tr>' +
+      Object.keys(ANALYSIS_RULE_LABELS).map(function (k) {
+        var isRatio = k.indexOf('ratio') !== -1;
+        return '<tr><td>' + esc(ANALYSIS_RULE_LABELS[k]) + '</td>' +
+          '<td class="num"><input data-ar="' + k + '" type="number" min="0"' +
+          (isRatio ? ' max="1" step="0.05"' : ' step="1"') +
+          ' value="' + (r[k] != null ? r[k] : '') + '" style="width:90px"></td></tr>';
+      }).join('') + '</table>';
+  }
+  $('panel-side').addEventListener('change', function () {
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    state.settings.project = currentProjectPatch({ panel: { side: this.value } });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    dockPanel();   // بلافاصله جابه‌جا شود تا اثرش دیده شود
+  });
+
+  $('analysis-rules-form').addEventListener('change', function (e) {
+    var inp = e.target.closest('input[data-ar]');
+    if (!inp) return;
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    var cur = analysisRules();
+    var next = JSON.parse(JSON.stringify(cur));
+    var v = Number(inp.value);
+    if (!isFinite(v) || v < 0) v = 0;
+    if (inp.dataset.ar.indexOf('ratio') !== -1 && v > 1) v = 1;
+    next[inp.dataset.ar] = v;
+    state.settings.project = currentProjectPatch({ analysis_rules: next });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    renderAnalysisRulesForm();
+    renderImportedParts();   // اثر تغییر بلافاصله دیده شود
+  });
+
+  /* --------------- قطعات خوانده‌شده از کابینت ساختهٔ خود کاربر (مورد ۱۰) --------------- */
+  // تشخیص خودکار است ولی **تصمیم نهایی با کاربر**: جدول ساده و قابل‌ویرایش، طبق
+  // خواستهٔ صریح («مثل اکسل دستی چک بشه، اگه لازم بود تغییراتی بدیم»).
+  // اصلاح کاربر در state.importedOverrides نگه داشته می‌شود و با اسکن مجدد پاک نمی‌شود.
+  // BOM یراق از **یک** جا صدا زده می‌شود.
+  //
+  // چهار جای مستقل `KalaxaHardware.bom(...)` را با آرگومان‌های خودشان صدا
+  // می‌زدند. با اضافه‌شدن کاتالوگ یراق، هر کدام که یادم می‌رفت، یک تب اقلام
+  // خاموش‌شده را همچنان نشان می‌داد و تب دیگری نه — بدون هیچ خطایی.
+  function hardwareBom() {
+    if (!state.snapshot) return null;
+    var pr = (state.settings && state.settings.project) || {};
+    return KalaxaHardware.bom(state.snapshot, {
+      glossary: state.glossary,
+      catalog: pr.hardware_catalog || {},
+      explicit: manualHardware()
+    });
+  }
+
+  function analysisRules() {
+
+    var pr = (state.settings && state.settings.project) || {};
+    return pr.analysis_rules || KalaxaSettings.defaults().project.analysis_rules;
+  }
+
+  // اصلاح کاربر می‌تواند نقش باشد یا اندازه. نسخه‌های قبلی فقط رشتهٔ نقش را
+  // ذخیره می‌کردند؛ پروژه‌های ذخیره‌شده نباید با این تغییر بشکنند.
+  function impOverride(key) {
+    var v = (state.importedOverrides || {})[key];
+    if (v == null) return {};
+    return typeof v === 'string' ? { role: v } : v;
+  }
+
+  function setImpOverride(key, field, value) {
+    state.importedOverrides = state.importedOverrides || {};
+    var cur = impOverride(key);
+    cur[field] = value;
+    state.importedOverrides[key] = cur;
+  }
+
+  // نوار لبه و شیار **از هندسه خوانده نمی‌شوند** — تصمیم کارگاه‌اند. پس پیش‌فرض
+  // از روی نقش می‌آید (همان جدولی که CabinetBuilder با آن کابینت می‌سازد) و
+  // هر ردیف دستی قابل اصلاح است. کاربر: «علامت‌های نوار و شیار و... نداره».
+  var EDGE_SIDES = ['front', 'back', 'top', 'bottom'];
+  // ترتیب اولویت: تنظیمات پروژه ← کاتالوگ مشترک ← تهی. کاربر: «دیتا رو باید از
+  // تنظیمات بخونه، مثل پشت‌بند». کارگاهی که پشت‌بند را روکار می‌کوبد باید بتواند
+  // قاعده را یک‌جا عوض کند، نه ردیف‌به‌ردیف.
+  function edgeDefaultFor(role) {
+    var base;
+    try { base = KalaxaCatalog.edgeDefaultFor(role); }
+    catch (e) { base = { edge: {}, groove: {} }; }
+    var pr = (state.settings && state.settings.project) || {};
+    var ov = (pr.edge_defaults || {})[String(role)];
+    if (!ov || typeof ov !== 'object') return base;
+    // تنظیمات را کاربر می‌تواند دستی ویرایش کند؛ مقدار خراب نباید جدول را
+    // بشکند — در آن صورت پیش‌فرض کاتالوگ می‌ماند.
+    var ok = function (v) { return v && typeof v === 'object' && !Array.isArray(v); };
+    return { edge: ok(ov.edge) ? ov.edge : base.edge,
+             groove: ok(ov.groove) ? ov.groove : base.groove };
+  }
+  function edgeSideLabel(side) {
+    try { return KalaxaCatalog.edgeSideLabels()[side] || side; }
+    catch (e) { return side; }
+  }
+  // مربعِ کوچکِ هر ضلع: پر = نوار دارد. کلیک، خاموش/روشنش می‌کند.
+  function edgeCell(key, role, ov) {
+    var def = edgeDefaultFor(role).edge;
+    return '<td class="num" style="white-space:nowrap">' + EDGE_SIDES.map(function (s) {
+      var on = ov['edge_' + s] != null ? ov['edge_' + s] : (def[s] ? 1 : 0);
+      return '<button data-imp-edge="' + esc(key) + '" data-imp-side="' + s + '" ' +
+        'data-imp-on="' + (on ? 1 : 0) + '" ' +
+        'title="نوار ' + edgeSideLabel(s) + (ov['edge_' + s] != null ? ' (اصلاح شما)' : '') + '" ' +
+        'style="width:20px;height:20px;margin:0 1px;padding:0;cursor:pointer;border:1px solid #999;' +
+        'background:' + (on ? '#2d6cdf' : 'transparent') + ';color:#fff;font-size:10px">' +
+        (on ? '▮' : '') + '</button>';
+    }).join('') + '</td>';
+  }
+  function grooveCell(key, role, ov, machined) {
+    var def = edgeDefaultFor(role).groove;
+    var on = ov.groove != null ? ov.groove : (def.back ? 1 : 0);
+    return '<td class="num"><button data-imp-groove="' + esc(key) + '" ' +
+      'data-imp-on="' + (on ? 1 : 0) + '" ' +
+      'title="شیار پشت‌بند' + (machined && !on ? ' — هندسه می‌گوید کار ماشین دارد' : '') + '" ' +
+      'style="width:26px;height:20px;padding:0;cursor:pointer;border:1px solid #999;' +
+      'background:' + (on ? '#7a5' : 'transparent') + ';color:#fff;font-size:10px">' +
+      (on ? '⊐' : (machined ? '?' : '')) + '</button></td>';
+  }
+
+  // فارسی‌بر (پروفیل لبه). مثل نوار، از هندسه خوانده نمی‌شود — تصمیم کارگاه است
+  // و فقط روی بعضی قطعات (معمولاً نما) می‌آید. کد علامتش از همان جدول marks
+  // تنظیمات می‌آید که نقشهٔ برش هم از آن می‌خواند.
+  function farsiCell(key, ov) {
+    var on = ov.farsi ? 1 : 0;
+    return '<td class="num"><button data-imp-farsi="' + esc(key) + '" ' +
+      'data-imp-on="' + on + '" title="فارسی‌بر (پروفیل لبه)" ' +
+      'style="width:26px;height:20px;padding:0;cursor:pointer;border:1px solid #999;' +
+      'background:' + (on ? '#b5651d' : 'transparent') + ';color:#fff;font-size:10px">' +
+      (on ? 'F' : '') + '</button></td>';
+  }
+
+  // اندازه‌ها قابل ویرایش‌اند: مدل همیشه دقیق نیست و کارگاه عدد درست را می‌داند.
+  function numInput(key, field, val) {
+    return '<input type="number" min="0" step="1" data-imp-dim="' + esc(key) +
+           '" data-imp-field="' + field + '" value="' + (val != null ? val : '') +
+           '" style="width:62px;text-align:center">';
+  }
+
+  // نام کابینت خوانده‌شده. مدل کاربر معمولاً نام گروهش «Component#6» است که
+  // در نقشهٔ برش و شیت قیمت هیچ معنایی ندارد؛ باید بشود «کابینت زیر گاز».
+  function importedLabel(raw) {
+    var ov = (state.importedNames || {})[raw.kalaxa_id];
+    return (ov != null && ov !== '') ? ov : (raw.label_fa || 'کابینت خوانده‌شده');
+  }
+
+  // ردیف‌های تجمیع‌شدهٔ یک کابینت خوانده‌شده، با اصلاحات کاربر روی آن‌ها.
+  // هم جدول از این می‌خواند و هم پلِ برش‌خور — دو مسیر جدا یعنی جدول یک چیز
+  // نشان بدهد و کارگاه چیز دیگری ببرد.
+  function importedRows(cab) {
+    var res = KalaxaPartClassifier.classify(cab.boxes, analysisRules());
+    return KalaxaPartClassifier.group(res.parts).map(function (p) {
+      var key = cab.kalaxa_id + '|' + p.ids.join(',');
+      var ov = impOverride(key);
+      var role = ov.role || p.role;
+      var def = edgeDefaultFor(role);
+      var out = {};
+      Object.keys(p).forEach(function (k) { out[k] = p[k]; });
+      out.key = key;
+      out.role = role;
+      out.role_label_fa = KalaxaPartClassifier.ROLE_LABELS_FA[role] || role;
+      out.model_qty = p.qty;   // عددی که از مدل شمرده شد، برای مقایسه
+      out.qty = ov.qty != null ? ov.qty : p.qty;
+      if (ov.len != null) out.cut_length_mm = ov.len;
+      if (ov.wid != null) out.cut_width_mm = ov.wid;
+      if (ov.thk != null) out.thickness_mm = ov.thk;
+      out.edge = {};
+      EDGE_SIDES.forEach(function (s) {
+        var v = ov['edge_' + s] != null ? ov['edge_' + s] : (def.edge[s] ? 1 : 0);
+        if (v) out.edge[s] = 1;
+      });
+      var gr = ov.groove != null ? ov.groove : (def.groove.back ? 1 : 0);
+      out.groove = gr ? { back: def.groove.back || 8 } : {};
+      out.farsi = !!ov.farsi;
+      return out;
+    });
+  }
+
+  // قطعات دستی → همان زنجیرهٔ همیشگی.
+  //
+  // تا این نسخه `state.manualParts` فقط **نمایش** داده می‌شد و هیچ‌جا مصرف
+  // نمی‌شد: کاربر قطعه اضافه می‌کرد، در جدول می‌دید، و در نقشهٔ برش و فاکتور
+  // هیچ اثری نبود. فرمی که کار نمی‌کند از نبودش بدتر است.
+  var MANUAL_CAB_ID = 'manual-parts';
+
+  function manualSheetRows(sheets) {
+    var out = [];
+    (state.manualParts || []).forEach(function (m, i) {
+      if ((m.kind || 'sheet') !== 'sheet') return;
+      var L = Number(m.len) || 0, W = Number(m.wid) || 0, T = Number(m.thk) || 0;
+      if (!(L > 0 && W > 0 && T > 0)) return;   // ردیف ناقص وارد برش‌خور نمی‌شود
+      var role = m.role && m.role !== 'hardware' ? m.role : 'unknown';
+      var sheet = (sheets || []).filter(function (sh) {
+        return Number(sh.thickness_mm) === Math.round(T);
+      })[0];
+      out.push({
+        key: role, name_fa: m.name || 'قطعهٔ دستی',
+        count: Math.max(1, Math.round(Number(m.qty) || 1)),
+        cut_length_mm: Math.round(L), cut_width_mm: Math.round(W),
+        thickness_mm: Math.round(T),
+        sheet_id: sheet ? sheet.sheet_id : ((sheets || [])[0] || {}).sheet_id,
+        grain: 'none', allow_rotation: true, edge: {}, groove: {},
+        note: 'افزودهٔ دستی', part_uid: MANUAL_CAB_ID + ':' + i,
+        cabinet_id: MANUAL_CAB_ID, source: 'manual'
+      });
+    });
+    return out;
+  }
+
+  // یراق دستی از مسیر «یراق صریح» می‌رود — همان مسیری که سند دامنه هم دارد.
+  function manualHardware() {
+    return (state.manualParts || [])
+      .filter(function (m) { return m.kind === 'hardware' && Number(m.qty) > 0; })
+      .map(function (m, i) {
+        return { unit_id: MANUAL_CAB_ID, kind: 'manual_' + i,
+                 name: m.name || 'کالای دستی', qty: Number(m.qty),
+                 unit: m.unit || 'عدد', group: m.group || '' };
+      });
+  }
+
+  function withImported(snapshot) {
+    if (typeof KalaxaImportedBridge === 'undefined') return snapshot;
+    var pr = (state.settings && state.settings.project) || {};
+    var panel = pr.panel || {};
+    var eff = KalaxaImportedBridge.effectiveSnapshot(snapshot, function (raw) {
+      return KalaxaImportedBridge.build(raw, importedRows(raw), {
+        sheets: snapshot.sheets || [],
+        body_sheet_id: panel.body_sheet_id,
+        door_sheet_id: panel.door_sheet_id,
+        label_fa: importedLabel(raw)
+      });
+    });
+
+    var manual = manualSheetRows(eff.sheets || snapshot.sheets);
+    if (!manual.length) return eff;
+
+    var out = {};
+    Object.keys(eff).forEach(function (k) { out[k] = eff[k]; });
+    out.parts_flat = (eff.parts_flat || []).concat(manual);
+    out.cabinets = (eff.cabinets || []).concat([{
+      kalaxa_id: MANUAL_CAB_ID, template_id: 'manual', category: 'base',
+      label_fa: 'قطعات افزودهٔ دستی', source: 'manual',
+      params: { cabinet_width: null, cabinet_height: null, cabinet_depth: null },
+      world_transform: { origin_cm: [0, 0, 0], rotation_z_deg: 0 }
+    }]);
+    return out;
+  }
+
+  function renderImportedParts() {
+    var host = $('imported-tables');
+    var badge = $('imported-badge');
+    $('imported-result').innerHTML = '';
+    var raws = (state.snapshot && state.snapshot.raw_cabinets) || [];
+    if (!raws.length) {
+      // دو حالت کاملاً متفاوت که پیش‌تر یک پیام می‌گرفتند:
+      //   الف) هنوز اسکن نزده‌ای — شاید کابینت خوانده‌شده داری ولی پنل خبر ندارد
+      //   ب) اسکن زده‌ای و واقعاً کابینت خوانده‌شده‌ای نیست
+      // اشتباه‌گرفتن این دو یعنی کاربر دنبال چیزی می‌گردد که فقط یک کلیک فاصله دارد.
+      host.innerHTML = state.snapshot
+        ? '<div class="msg info">کابینت خوانده‌شده‌ای در مدل نیست — در اسکچاپ کابینت را ' +
+          'انتخاب کنید و از منوی کالاکسا «خواندن کابینت انتخاب‌شده (ساختهٔ خودم)» را بزنید، ' +
+          'بعد دوباره «اسکن مدل و آنالیز».</div>'
+        : '<div class="msg warn">هنوز اسکن نزده‌اید. اگر کابینتی را با «خواندن کابینت ' +
+          'انتخاب‌شده» وارد کرده‌اید، اول دکمهٔ <b>«اسکن مدل و آنالیز»</b> (بالای همین پنل) ' +
+          'را بزنید تا این‌جا ظاهر شود.</div>';
+      badge.style.display = 'none';
+      renderExploded([], null);   // نقشهٔ کابینتِ قبلی نباید روی صفحه بماند
+      return;
+    }
+    state.importedOverrides = state.importedOverrides || {};
+    var rules = analysisRules();
+    var totalParts = 0, totalLow = 0;
+
+    host.innerHTML = raws.map(function (cab) {
+      var res = KalaxaPartClassifier.classify(cab.boxes, rules);
+      totalParts += res.parts.length;
+      var label = importedLabel(cab);
+      // ردیف‌های یکسان در یک سطر با تعداد جمع می‌شوند: کارگاه «۴ عدد» سفارش
+      // می‌دهد نه چهار سطر تکراری، و در جدول کوتاه‌تر اشتباهِ واقعی دیده می‌شود.
+      var rows = importedRows(cab).map(function (p) {
+        // اصلاح روی **کل گروه** اعمال می‌شود؛ کلید شامل همهٔ شناسه‌هاست.
+        var key = p.key;
+        var ov = impOverride(key);
+        var role = p.role;
+        var edited = !!(ov.role || ov.len || ov.wid || ov.thk);
+        var low = !edited && (p.role === 'unknown' || p.confidence < 0.8);
+        if (low) totalLow += p.qty;
+        var opts = KalaxaPartClassifier.ROLES.map(function (r) {
+          return '<option value="' + r + '"' + (r === role ? ' selected' : '') + '>' +
+                 esc(KalaxaPartClassifier.ROLE_LABELS_FA[r] || r) + '</option>';
+        }).join('');
+        // یراق ابعاد برش ندارد — «۵۷×۸۱ ضخامت ۳۳» برای یک لولا فقط گمراهی است.
+        var isHw = role === 'hardware';
+        var dimCell = isHw
+          ? '<td class="num meta" colspan="2">—</td>'
+          : '<td class="num">' + numInput(key, 'len', p.cut_length_mm) +
+            ' × ' + numInput(key, 'wid', p.cut_width_mm) + '</td>' +
+            '<td class="num">' + numInput(key, 'thk', p.thickness_mm) + '</td>';
+        return '<tr' + (low ? ' style="background:#fff8e1"' : '') + '>' +
+          '<td>' + esc(p.name || '—') + '</td>' +
+          // تعداد قابل ویرایش: مدل همیشه همهٔ قطعات را ندارد (کارگاه یک طبقهٔ
+          // اضافه می‌برد، یا قطعه‌ای در مدل کشیده نشده). عدد شمرده‌شده از مدل
+          // پیش‌فرض است، نه حکم.
+          '<td class="num">' + numInput(key, 'qty', p.qty) +
+            (ov.qty != null && ov.qty !== p.model_qty
+              ? '<div class="meta">مدل: ' + fa(p.model_qty) + '</div>' : '') + '</td>' +
+          '<td><select data-imp-role="' + esc(key) + '">' + opts + '</select>' +
+            (edited ? ' <span class="meta">(اصلاح شما)</span>' : '') + '</td>' +
+          dimCell +
+          (isHw ? '<td class="num meta" colspan="3">—</td>'
+                : edgeCell(key, role, ov) + grooveCell(key, role, ov, p.machined) +
+                  farsiCell(key, ov)) +
+          '<td class="num">' + (isHw ? '—' : fa(Math.round(p.confidence * 100)) + '٪') + '</td>' +
+          '<td class="num">' + (isHw ? '—' : (p.machined
+            ? '<span title="حجم واقعی کمتر از جعبهٔ محیطی — ماده برداشته شده">● ' +
+              (p.solid_ratio != null
+                ? fa(Math.round((1 - p.solid_ratio) * 100)) + '٪'
+                : 'دارد') + '</span>'
+            : '—')) + '</td>' +
+          '<td class="meta">' + esc(p.reason) + '</td></tr>';
+      }).join('');
+      var warn = (res.warnings || []).map(function (w) {
+        return '<div class="msg warn">' + esc(w) + '</div>';
+      }).join('');
+      // نام کابینت قابل ویرایش: نام گروه در مدل معمولاً «Component#6» است و
+      // در نقشهٔ برش و شیت قیمت هیچ معنایی ندارد. همین نام است که از حالا در
+      // تب کابینت‌ها، نقشهٔ برش و شیت قیمت می‌نشیند.
+      return '<h3 style="font-size:13px;margin-top:12px">' +
+        '<input data-imp-name="' + esc(cab.kalaxa_id) + '" value="' + esc(label) +
+        '" placeholder="نام کابینت" style="font-size:13px;width:220px">' +
+        ' <span class="meta">(' + fa(res.parts.length) + ' قطعه)</span></h3>' +
+        adoptBox(cab, res) + warn +
+        '<table><tr><th>نام گروه</th><th>تعداد</th><th>نقش</th><th>ابعاد برش (mm)</th><th>ضخامت</th>' +
+        '<th title="جلو / عقب / سر بالا / سر پایین — کلیک کنید">نوار لبه</th>' +
+        '<th title="شیار پشت‌بند">شیار</th>' +
+        '<th title="فارسی‌بر (پروفیل لبه)">فارسی‌بر</th>' +
+        '<th>اطمینان</th><th>کار ماشین</th><th>دلیل تشخیص</th></tr>' + rows + '</table>' +
+        '<div class="meta">نوار و شیار از هندسه خوانده نمی‌شوند — تصمیم کارگاه‌اند. ' +
+        'پیش‌فرض از روی نقش می‌آید (همان قاعده‌ای که کالاکسا با آن کابینت می‌سازد)؛ ' +
+        'روی مربع‌ها کلیک کنید تا عوض شود. ترتیب: ' +
+        EDGE_SIDES.map(function (s) { return esc(edgeSideLabel(s)); }).join(' / ') + '</div>';
+    }).join('');
+
+    host.innerHTML += renderCncSheets(raws, rules) + renderManualParts();
+    renderExploded(raws, rules);
+
+    badge.style.display = totalLow ? '' : 'none';
+    badge.textContent = fa(totalLow);
+    if (totalLow) {
+      msg('warn', fa(totalLow) + ' از ' + fa(totalParts) + ' قطعه نیاز به بررسی دارد (ردیف‌های زرد)',
+        $('imported-result'));
+    } else {
+      msg('ok', 'همهٔ ' + fa(totalParts) + ' قطعه با اطمینان بالا تشخیص داده شد', $('imported-result'));
+    }
+  }
+
+  /* ------------------ تبدیل به کابینت پارامتریک (قابل سایز) ------------------ */
+  // کابینتی که کاربر خودش کشیده هندسهٔ مرده است — عرضش را نمی‌شود عوض کرد چون
+  // هیچ‌جا نوشته نشده «این ۹۰۰ است». تبدیل، همان چند عدد را از قطعات درمی‌آورد
+  // و کابینت را پارامتریک می‌سازد.
+  //
+  // ابعادِ حدس‌زده **قبل از تبدیل** نشان داده می‌شود و قابل ویرایش است: تبدیلِ
+  // بی‌صدا با ابعاد غلط، از تبدیل‌نکردن بدتر است.
+  function adoptBox(cab, res) {
+    if (typeof KalaxaAdopt === 'undefined') return '';
+    var a = KalaxaAdopt.infer(res.parts, res.bounds);
+    if (!a.ready) return '';
+
+    var key = cab.kalaxa_id;
+    var ov = (state.adoptEdits || {})[key] || {};
+    var v = function (f) { return ov[f] != null ? ov[f] : a[f]; };
+    var tplOpts = ADOPT_TEMPLATES.map(function (t) {
+      return '<option value="' + t.id + '"' +
+             (t.id === v('template_id') ? ' selected' : '') + '>' + esc(t.fa) + '</option>';
+    }).join('');
+    var dim = function (f, label) {
+      return label + ' <input type="number" min="1" step="0.5" data-adopt="' + esc(key) +
+             '" data-adopt-f="' + f + '" value="' + v(f) + '" style="width:64px;text-align:center">';
+    };
+
+    var why = (a.notes || []).map(function (n) { return esc(n); }).join('؛ ');
+    var guess = (a.guesses || []).length
+      ? '<div class="msg warn" style="margin:4px 0">' +
+        esc(a.guesses.join('؛ ')) + ' — قبل از تبدیل چک کنید.</div>'
+      : '';
+
+    return '<div style="border:1px solid #ddd;padding:6px 8px;margin:4px 0;background:#fafaf7">' +
+      '<b style="font-size:12px">تبدیل به کابینت پارامتریک</b>' +
+      '<div class="meta" style="margin:3px 0">' + why + '</div>' + guess +
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">' +
+      '<select data-adopt="' + esc(key) + '" data-adopt-f="template_id">' + tplOpts + '</select>' +
+      dim('width_cm', 'عرض') + dim('height_cm', 'ارتفاع') + dim('depth_cm', 'عمق') +
+      '<span class="meta">cm</span>' +
+      '<button data-adopt-go="' + esc(key) + '">تبدیل کن</button>' +
+      '</div>' +
+      '<div class="meta" style="margin-top:4px">کابینت اصلی پاک نمی‌شود — مخفی می‌شود ' +
+      'تا اگر تبدیل درست نبود برش گردانید.</div></div>';
+  }
+
+  function doAdopt(key) {
+    var raws = (state.snapshot && state.snapshot.raw_cabinets) || [];
+    var cab = raws.find(function (c) { return c.kalaxa_id === key; });
+    if (!cab) { msg('err', 'کابینت خوانده‌شده پیدا نشد', $('imported-result')); return; }
+
+    var res = KalaxaPartClassifier.classify(cab.boxes, analysisRules());
+    var a = KalaxaAdopt.infer(res.parts, res.bounds);
+    var ov = (state.adoptEdits || {})[key] || {};
+
+    var payload = {
+      kalaxa_id: key,
+      label_fa: cab.label_fa,
+      template_id: ov.template_id || a.template_id,
+      width_cm: ov.width_cm != null ? ov.width_cm : a.width_cm,
+      height_cm: ov.height_cm != null ? ov.height_cm : a.height_cm,
+      depth_cm: ov.depth_cm != null ? ov.depth_cm : a.depth_cm,
+      opts: a.opts
+    };
+    if (!(payload.width_cm > 0 && payload.height_cm > 0 && payload.depth_cm > 0)) {
+      msg('err', 'ابعاد باید بزرگ‌تر از صفر باشند', $('imported-result'));
+      return;
+    }
+    if (!inSketchUp) {
+      msg('warn', 'تبدیل فقط داخل اسکچاپ کار می‌کند — مدل باید باز باشد',
+          $('imported-result'));
+      return;
+    }
+    setBusy(true, 'در حال تبدیل…');
+    window.sketchup.adopt_cabinet(JSON.stringify(payload));
+  }
+
+  window.onAdopted = function (json) {
+    var res;
+    try { res = typeof json === 'string' ? JSON.parse(json) : json; }
+    catch (e) { res = { message: 'تبدیل انجام شد' }; }
+    setBusy(false);
+    msg('ok', res.message || 'تبدیل انجام شد', $('imported-result'));
+    // مدل عوض شده — بدون اسکن دوباره، کابینت تازه در هیچ تبی دیده نمی‌شود و
+    // کاربر فکر می‌کند تبدیل کار نکرده.
+    setBusy(true, 'در حال اسکن مدل…');
+    window.sketchup.scan_model();
+  };
+
+  var ADOPT_TEMPLATES = [
+    { id: 'base_single_door', fa: 'زمینی تک‌درب' },
+    { id: 'base_three_drawer', fa: 'زمینی کشویی' },
+    { id: 'base_sink_double_door', fa: 'زیرسینکی دولنگه' },
+    { id: 'wall_single_door', fa: 'دیواری' },
+    { id: 'tall_double_door', fa: 'قدی دولنگه' }
+  ];
+
+  /* ----------------------------- نقشهٔ انفجاری ----------------------------- */
+  // یراق در نقشهٔ انفجاری نمی‌آید: لولا و پایه جعبه‌های ریزی‌اند که نقشه را
+  // شلوغ می‌کنند بدون اینکه چیزی دربارهٔ مونتاژِ بدنه بگویند.
+  function renderExploded(raws, rules) {
+    var host = $('exploded-maps');
+    if (!host) return;
+    if (!raws.length) { host.innerHTML = ''; return; }
+
+    host.innerHTML = raws.map(function (cab) {
+      var parts = KalaxaPartClassifier.classify(cab.boxes, rules).parts
+        .filter(function (p) { return p.role !== 'hardware'; });
+      if (!parts.length) return '';
+
+      var drawn = parts.map(function (p) {
+        return { name: p.name || p.role_label_fa, role: p.role,
+                 role_label_fa: p.role_label_fa,
+                 x: p.box.x, y: p.box.y, z: p.box.z,
+                 dx: p.box.dx, dy: p.box.dy, dz: p.box.dz };
+      });
+      var r = KalaxaExploded.render(drawn);
+      if (!r.svg) {
+        return '<div class="msg info">' + esc(cab.label_fa) + ': ' +
+               esc((r.warnings || []).join('؛ ')) + '</div>';
+      }
+
+      var legend = r.parts.map(function (p) {
+        return '<tr><td class="num">' + fa(p.n) + '</td><td>' + esc(p.name) + '</td>' +
+               '<td>' + esc(p.role_label_fa || p.role) + '</td></tr>';
+      }).join('');
+
+      return '<div style="margin-top:10px"><b style="font-size:12px">' +
+        esc(cab.label_fa) + '</b>' +
+        '<div style="overflow:auto;border:1px solid #ddd;margin:6px 0">' + r.svg + '</div>' +
+        '<table><tr><th>#</th><th>نام گروه</th><th>نقش</th></tr>' + legend + '</table></div>';
+    }).join('');
+  }
+
+  /* --------------------- نقشهٔ جداگانهٔ قطعات کار ماشین --------------------- */
+  // کاربر: «قطعات دارای سی‌ان‌سی باید نقشه جداگانه داشته باشه». درست است: این
+  // قطعات با بقیه فرق دارند — اپراتور CNC باید هرکدام را جدا ببیند، نه در
+  // فهرست برش قاطیِ تخته‌های ساده.
+  //
+  // چیزی که **نمی‌توانیم** بدهیم: نقشهٔ دقیق سوراخ‌ها. از جعبهٔ محیطی فقط
+  // می‌فهمیم ماده برداشته شده، نه کجا و چقدر. پس این‌جا برگهٔ «این قطعات را
+  // دستی بررسی کن» است با هر چه واقعاً می‌دانیم — نه نقشه‌ای که وانمود کند
+  // می‌داند سوراخ کجاست. نقشهٔ دروغ بدتر از نبودِ نقشه است.
+  /**
+   * ردیف سوراخ پین طبقه روی دیواره‌های یک کابینت (سیستم ۳۲).
+   *
+   * چرا این‌جا و نه در اسکنر: کابینتِ ساخته‌شدهٔ ما سوراخ پین **ندارد** —
+   * تخته صاف است. پس این قطعات `machined` نیستند و اصلاً به نقشهٔ CNC
+   * نمی‌رسیدند. سوراخ این‌جا از روی هندسه ساخته می‌شود و قطعه به فهرست
+   * اضافه می‌شود.
+   *
+   * ارتفاع و عمق از **جعبهٔ سه‌بعدی** گرفته می‌شود نه از ابعاد برش: جعبه
+   * می‌داند کدام راستا بالاست، برگهٔ برش این را از دست داده. بعد ماژول
+   * همین دو عدد را با ابعاد برش تطبیق می‌دهد و اگر نخوانَد سوراخ نمی‌زند.
+   */
+  function addPinRows(cab, parts, items) {
+    if (typeof KalaxaSystem32 === 'undefined') return;
+    KalaxaSystem32.planCabinet(parts).sides.forEach(function (s) {
+      if (!s.result.holes.length) return;
+      if (items.every(function (it) { return it.p !== s.part; })) {
+        items.push({ cab: cab, p: s.part });
+      }
+    });
+  }
+
+  function renderCncSheets(raws, rules) {
+    var items = [];
+    raws.forEach(function (cab) {
+      var res = KalaxaPartClassifier.classify(cab.boxes, rules);
+      // بدون ادغام: هر قطعهٔ ماشین‌کاری‌شده نقشهٔ خودش را دارد. دو قطعهٔ قرینه
+      // هم‌اندازه‌اند ولی یک نقشه نیستند.
+      res.parts.forEach(function (p) {
+        if (p.machined && p.role !== 'hardware') items.push({ cab: cab, p: p });
+      });
+      addPinRows(cab, res.parts, items);
+    });
+    if (!items.length) return '';
+
+    var withGeom = items.filter(function (it) {
+      var f = it.p.features;
+      return f && ((f.holes || []).length || (f.pockets || []).length);
+    }).length;
+
+    var head = '<h3 style="font-size:13px;margin-top:18px">نقشهٔ قطعات کار ماشین ' +
+      '<span class="meta">(' + fa(items.length) + ' قطعه)</span></h3>' +
+      (withGeom < items.length
+        ? '<div class="msg warn">' + fa(items.length - withGeom) + ' قطعه کار ماشین ' +
+          'دارد ولی <b>جای دقیق سوراخ‌ها از مدل درنیامد</b> — برایشان فقط خطِ دور ' +
+          'قطعه کشیده می‌شود و باید دستی اندازه بگیرید.</div>'
+        : '') +
+      '<div class="meta" style="margin-bottom:6px">هر قطعه نقشهٔ خودش را دارد: دو ' +
+      'قطعهٔ قرینه هم‌اندازه‌اند ولی سوراخ‌هایشان آینه است، و یک نقشه برای هر دو ' +
+      'یعنی یکی‌شان اشتباه سوراخ شود. اندازه‌ها از <b>لبهٔ خودِ قطعه</b> است.</div>';
+
+    return head + items.map(function (it, i) {
+      var p = it.p;
+      var sheet = KalaxaCncSheet.render(p);
+      var s32 = p._s32 || { holes: [], warnings: [] };
+      var warn = (sheet.warnings || []).concat(s32.warnings || []).map(function (w) {
+        return '<div class="msg info" style="margin:2px 0">' + esc(w) + '</div>';
+      }).join('');
+      return '<div style="border:1px solid #ddd;padding:8px;margin:8px 0">' +
+        '<b style="font-size:12px">' + fa(i + 1) + '. ' + esc(p.name || '—') + '</b> ' +
+        '<span class="meta">' + esc(it.cab.label_fa) + ' — ' +
+        esc(p.role_label_fa || p.role) + ' — ' +
+        fa(p.cut_length_mm) + '×' + fa(p.cut_width_mm) + '×' + fa(p.thickness_mm) +
+        '</span>' + warn +
+        '<div style="overflow:auto;margin:6px 0">' + sheet.svg + '</div>' +
+        KalaxaCncSheet.tableHtml(sheet) +
+        (s32.holes.length ? KalaxaSystem32.noteHtml(s32) : '') + '</div>';
+    }).join('');
+  }
+
+  /* ------------------------- افزودن قطعهٔ دستی ------------------------- */
+  // کاربر: «جا برای اضافه کردن قطعات». مدل همیشه کامل نیست — قطعه‌ای کشیده
+  // نشده، یا کارگاه چیزی اضافه می‌برد. این ردیف‌ها جدا نگه داشته می‌شوند تا با
+  // اسکن مجدد پاک نشوند و همیشه معلوم باشد کدام از مدل آمده و کدام دستی است.
+  var MANUAL_KINDS = [['sheet', 'قطعهٔ ورقی'], ['hardware', 'یراق / کالا']];
+  var MANUAL_UNITS = [['عدد', 'عدد'], ['جفت', 'جفت'], ['متر', 'متر'],
+                      ['برگ', 'برگ'], ['بسته', 'بسته']];
+
+  function renderManualParts() {
+    state.manualParts = state.manualParts || [];
+    var rows = state.manualParts.map(function (m, i) {
+      var kindSel = MANUAL_KINDS.map(function (k) {
+        return '<option value="' + k[0] + '"' +
+          ((m.kind || 'sheet') === k[0] ? ' selected' : '') + '>' + k[1] + '</option>';
+      }).join('');
+      var unitSel = MANUAL_UNITS.map(function (u) {
+        return '<option value="' + u[0] + '"' +
+          ((m.unit || 'عدد') === u[0] ? ' selected' : '') + '>' + u[1] + '</option>';
+      }).join('');
+      var opts = KalaxaPartClassifier.ROLES.map(function (r) {
+        return '<option value="' + r + '"' + (r === m.role ? ' selected' : '') + '>' +
+               esc(KalaxaPartClassifier.ROLE_LABELS_FA[r] || r) + '</option>';
+      }).join('');
+      // یراق ابعاد برش ندارد — واحدش «عدد» است.
+      //
+      // کاربر: «وقتی رو یراق تنظیم می‌شه واحد عدد بشه». فرم قبلی سه خانهٔ
+      // طول/عرض/ضخامت می‌خواست، حتی وقتی نقش «یراق» بود؛ یعنی کاربر مجبور
+      // می‌شد برای یک لولا عدد بی‌معنا بزند تا ردیف پذیرفته شود.
+      var isHw = isHardware || m.role === 'hardware';
+      var dims = isHw
+        ? '<td class="num meta" colspan="2">— <span title="یراق شمارشی است، ' +
+          'نه بریدنی">واحد: عدد</span></td>'
+        : '<td class="num"><input type="number" min="0" data-man="' + i +
+          '" data-man-f="len" value="' + m.len + '" style="width:62px;text-align:center"> × ' +
+          '<input type="number" min="0" data-man="' + i +
+          '" data-man-f="wid" value="' + m.wid + '" style="width:62px;text-align:center"></td>' +
+          '<td class="num"><input type="number" min="0" data-man="' + i +
+          '" data-man-f="thk" value="' + m.thk + '" style="width:56px;text-align:center"></td>';
+
+      // یراق نقشِ برش ندارد؛ به‌جای فهرست نقش‌ها، زیرگروه آزاد می‌گیرد تا در
+      // فهرست کالا کنار هم‌گروه‌هایش بنشیند.
+      var isHardware = (m.kind || 'sheet') === 'hardware';
+      var roleCell = isHardware
+        ? '<td><input data-man="' + i + '" data-man-f="group" value="' +
+          esc(m.group || '') + '" placeholder="زیرگروه" style="width:110px"></td>'
+        : '<td><select data-man="' + i + '" data-man-f="role">' + opts + '</select></td>';
+
+      return '<tr><td><select data-man="' + i + '" data-man-f="kind">' + kindSel +
+          '</select></td>' +
+        '<td><input data-man="' + i + '" data-man-f="name" value="' +
+          esc(m.name || '') + '" style="width:140px"></td>' +
+        '<td class="num"><input type="number" min="0" step="' + (isHardware ? '0.01' : '1') +
+          '" data-man="' + i + '" data-man-f="qty" value="' + m.qty +
+          '" style="width:64px;text-align:center"></td>' +
+        '<td>' + (isHardware
+          ? '<select data-man="' + i + '" data-man-f="unit">' + unitSel + '</select>'
+          : '<span class="meta">برگ ورق</span>') + '</td>' +
+        roleCell + dims +
+        '<td><button data-man-del="' + i + '">حذف</button></td></tr>';
+    }).join('');
+
+    return '<h3 style="font-size:13px;margin-top:18px">قطعات افزودهٔ دستی' +
+      (state.manualParts.length ? ' <span class="meta">(' +
+        fa(state.manualParts.length) + ' ردیف)</span>' : '') + '</h3>' +
+      (rows
+        ? '<table><tr><th>نوع</th><th>نام</th><th>تعداد</th><th>واحد</th>' +
+          '<th>نقش / زیرگروه</th><th>ابعاد برش (mm)</th><th>ضخامت</th><th></th></tr>' +
+          rows + '</table>'
+        : '<div class="msg info">اگر قطعه‌ای در مدل کشیده نشده یا کارگاه چیزی ' +
+          'اضافه می‌برد، این‌جا اضافه‌اش کنید. این ردیف‌ها با اسکن مجدد پاک نمی‌شوند.</div>') +
+      '<button id="man-add" style="margin-top:6px">+ افزودن قطعه</button>';
+  }
+
+  $('imported-tables').addEventListener('change', function (e) {
+    var ad = e.target.closest('[data-adopt]');
+    if (ad) {
+      state.adoptEdits = state.adoptEdits || {};
+      var k = ad.dataset.adopt;
+      state.adoptEdits[k] = state.adoptEdits[k] || {};
+      var f = ad.dataset.adoptF;
+      state.adoptEdits[k][f] = f === 'template_id' ? ad.value : Math.max(0, Number(ad.value) || 0);
+      return;   // بدون رسم مجدد، وگرنه فوکوس از ورودی می‌پرد
+    }
+    var ni = e.target.closest('input[data-imp-name]');
+    if (ni) {
+      state.importedNames = state.importedNames || {};
+      state.importedNames[ni.dataset.impName] = ni.value.trim();
+      // نام روی نقشهٔ برش و شیت قیمت می‌نشیند، پس باید دوباره ساخته شوند.
+      if (state.snapshot) rebuildFromImported();
+      return;
+    }
+    var mi = e.target.closest('[data-man]');
+    if (mi) {
+      var m = state.manualParts[Number(mi.dataset.man)];
+      var f = mi.dataset.manF;
+      if (!m) return;
+      if (f === 'name' || f === 'role' || f === 'kind' || f === 'unit' || f === 'group') {
+        m[f] = mi.value;
+      } else if (f === 'qty') {
+        // یراق متری اعشار دارد (۲٫۸ متر پروفیل)؛ گرد کردن یعنی سفارش غلط.
+        var v = Number(mi.value) || 0;
+        m.qty = m.kind === 'hardware' ? Math.max(0, Math.round(v * 100) / 100)
+                                      : Math.max(1, Math.round(v));
+      } else {
+        m[f] = Math.max(0, Math.round(Number(mi.value) || 0));
+      }
+      renderImportedParts();
+      return;
+    }
+    importedChange(e);
+  });
+
+  $('imported-tables').addEventListener('click', function (e) {
+    var go = e.target.closest('button[data-adopt-go]');
+    if (go) {
+      doAdopt(go.dataset.adoptGo);
+      return;
+    }
+    if (e.target.id === 'man-add') {
+      state.manualParts = state.manualParts || [];
+      state.manualParts.push({ kind: 'sheet', name: '', qty: 1, unit: 'عدد',
+                               group: '', role: 'unknown', len: 0, wid: 0, thk: 16 });
+      renderImportedParts();
+      return;
+    }
+    var del = e.target.closest('button[data-man-del]');
+    if (!del) return;
+    state.manualParts.splice(Number(del.dataset.manDel), 1);
+    renderImportedParts();
+  });
+
+  function importedChange(e) {
+    var sel = e.target.closest('select[data-imp-role]');
+    if (sel) {
+      setImpOverride(sel.dataset.impRole, 'role', sel.value);
+      renderImportedParts();
+      return;
+    }
+    var inp = e.target.closest('input[data-imp-dim]');
+    if (!inp) return;
+
+    var v = Number(inp.value);
+    if (!isFinite(v) || v < 0) v = 0;
+    setImpOverride(inp.dataset.impDim, inp.dataset.impField, Math.round(v));
+    renderImportedParts();
+  }
+
+  // نوار/شیار/فارسی‌بر دکمه‌اند نه ورودی، پس رویدادشان click است نه change.
+  $('imported-tables').addEventListener('click', function (e) {
+    var eb = e.target.closest('button[data-imp-edge]');
+    if (eb) {
+      // وضعیت فعلی روی خودِ دکمه نوشته شده — چه از پیش‌فرض نقش آمده باشد چه از
+      // اصلاح قبلی کاربر. خواندنش از رنگ پس‌زمینه شکننده بود.
+      setImpOverride(eb.dataset.impEdge, 'edge_' + eb.dataset.impSide,
+                     eb.dataset.impOn === '1' ? 0 : 1);
+      renderImportedParts();
+      return;
+    }
+    var fb = e.target.closest('button[data-imp-farsi]');
+    if (fb) {
+      setImpOverride(fb.dataset.impFarsi, 'farsi', fb.dataset.impOn === '1' ? 0 : 1);
+      renderImportedParts();
+      return;
+    }
+    var gb = e.target.closest('button[data-imp-groove]');
+    if (!gb) return;
+    setImpOverride(gb.dataset.impGroove, 'groove', gb.dataset.impOn === '1' ? 0 : 1);
+    renderImportedParts();
+  });
+
+  /* ------------------ دسته‌بندی و بستهٔ تمپلیت ------------------ */
+  // کاتالوگ پایه + هر بسته‌ای که کاربر وارد کرده. بسته **جای** کاتالوگ را
+  // نمی‌گیرد؛ رویش می‌نشیند.
+  function templateCatalog() {
+    var base;
+    try { base = KalaxaCatalog.get('templates'); } catch (e) { base = { groups: {}, templates: {} }; }
+    var pr = (state.settings && state.settings.project) || {};
+    return pr.template_pack
+      ? KalaxaTemplatePack.merge(base, pr.template_pack) : base;
+  }
+
+  function renderTemplateGroups() {
+    var box = $('template-groups');
+    if (!box || typeof KalaxaTemplatePack === 'undefined') return;
+    var groups = KalaxaTemplatePack.grouped(templateCatalog());
+    if (!groups.length) {
+      box.innerHTML = '<div class="msg info">کاتالوگ تمپلیت بار نشد.</div>';
+      return;
+    }
+    box.innerHTML = groups.map(function (g) {
+      return '<h4 style="font-size:12px;margin:10px 0 4px">' + esc(g.label_fa) + '</h4>' +
+        '<table><tr><th>تمپلیت</th><th>دسته</th><th>اندازه‌های آماده</th></tr>' +
+        g.templates.map(function (t) {
+          var sizes = (t.presets || []).map(function (p) {
+            return esc(p.label_fa) + ' <span class="meta">(' +
+              fa(p.w) + '×' + fa(p.h) + '×' + fa(p.d) + ')</span>';
+          }).join('، ') || '<span class="meta">—</span>';
+          return '<tr><td>' + esc(t.label_fa || t.id) + '</td>' +
+            '<td class="meta">' + esc(t.category || '—') + '</td>' +
+            '<td>' + sizes + '</td></tr>';
+        }).join('') + '</table>';
+    }).join('');
+  }
+
+  $('btn-pack-in').addEventListener('click', function () {
+    if (!inSketchUp) { msg('warn', 'وارد کردن بسته فقط داخل اسکچاپ کار می‌کند'); return; }
+    window.sketchup.import_template_pack('');
+  });
+
+  $('btn-pack-out').addEventListener('click', function () {
+    exportText('kalaxa_templates', KalaxaTemplatePack.toPack(templateCatalog()), 'json');
+  });
+
+  window.onTemplatePack = function (json) {
+    var o;
+    try { o = typeof json === 'string' ? JSON.parse(json) : json; }
+    catch (e) { msg('err', 'پاسخ نامعتبر'); return; }
+    if (o.cancelled) return;
+
+    var pack;
+    try { pack = JSON.parse(o.content || '{}'); }
+    catch (e) { msg('err', 'فایل JSON معتبر نیست: ' + e.message); return; }
+
+    var known = Object.keys((KalaxaCatalog.get('templates') || {}).templates || {});
+    var r = KalaxaTemplatePack.validate(pack, known);
+    (r.warnings || []).forEach(function (w) { msg('warn', w); });
+    if (!r.ok) {
+      (r.errors || []).forEach(function (e) { msg('err', e); });
+      return;
+    }
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    state.settings.project = currentProjectPatch({ template_pack: r });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    renderTemplateGroups();
+    msg('ok', fa(Object.keys(r.templates).length) + ' تمپلیت از بسته خوانده شد' +
+      (r.skipped.length ? '؛ ' + fa(r.skipped.length) + ' ردیف رد شد' : ''));
+  };
+
+  function renderTemplateCatalog() {
+    if (!state.snapshot) return;
+    var pr = (state.settings && state.settings.project) || {};
+    var cabRows = KalaxaCabinetView.summarize(state.snapshot).cabinets;
+    var merged = KalaxaTemplateCatalog.mergeFromCabinets(pr.template_catalog || {}, cabRows);
+
+    if (state.settings) {
+      state.settings.project = currentProjectPatch({ template_catalog: merged.catalog });
+      $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    }
+
+    var entries = KalaxaTemplateCatalog.listEntries(merged.catalog, merged.seen_keys);
+    $('template-cards').innerHTML = entries.length
+      ? entries.map(function (e) {
+          var dim = fa(Math.round(e.w_mm / 10)) + '×' + fa(Math.round(e.h_mm / 10)) + '×' +
+                    fa(Math.round(e.d_mm / 10)) + ' cm';
+          return '<div class="card" style="min-width:180px">' +
+            KalaxaCabinetView.frontSVG(e, { unit: 'cm' }) +
+            '<div style="margin-top:6px">' +
+            '<input data-template-key="' + esc(e.key) + '" type="text" value="' + esc(e.label_fa) +
+            '" style="width:100%;font-weight:bold;margin-bottom:2px">' +
+            '</div>' +
+            '<div class="meta">' + esc(e.key) + ' — ' + dim + '</div>' +
+            '<div class="meta">' + (e.in_current_scan
+              ? '<span style="color:var(--ok)">✓ در این اسکن هست</span>'
+              : '<span style="color:var(--warn)">این دور در مدل نیست</span>') + '</div>' +
+            '</div>';
+        }).join('')
+      : '<div class="msg info">هنوز کابینتی با تمپلیت مشخص در مدل نیست</div>';
+
+    if (merged.new_keys.length) {
+      msg('info', fa(merged.new_keys.length) + ' تمپلیت تازه به کاتالوگ اضافه شد — نامش را در همین تب می‌توانید عوض کنید',
+        $('messages'));
+    }
+  }
+
+  $('template-cards').addEventListener('change', function (e) {
+    var inp = e.target.closest('input[data-template-key]');
+    if (!inp) return;
+    var key = inp.dataset.templateKey;
+    var pr = (state.settings && state.settings.project) || {};
+    var catalog = Object.assign({}, pr.template_catalog || {});
+    if (!catalog[key]) return;
+    catalog[key] = Object.assign({}, catalog[key], { label_fa: inp.value.trim() || key, user_labeled: true });
+    state.settings.project = currentProjectPatch({ template_catalog: catalog });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    renderTemplateCatalog();
+    msg('info', 'نام تمپلیت ذخیره شد — برای ماندگاری «ذخیره در مدل» را در تب تنظیمات بزنید', $('messages'));
+  });
+
+  /* --------------------------- چک استاندارد --------------------------- */
+  function renderRules() {
+    var res = KalaxaRules.run(state.snapshot);
+    var box = $('rules-result');
+    box.innerHTML = '';
+    var badge = $('rules-badge');
+    var n = res.counts.error + res.counts.warn;
+    if (n) { badge.style.display = ''; badge.textContent = fa(n); }
+    else badge.style.display = 'none';
+
+    if (!res.findings.length) {
+      msg('ok', 'همه چک‌های استاندارد پاس شد ✓', box);
+      return;
+    }
+    msg(res.ok ? 'warn' : 'err',
+      fa(res.counts.error) + ' خطا، ' + fa(res.counts.warn) + ' هشدار، ' +
+      fa(res.counts.info) + ' نکته', box);
+    res.findings.forEach(function (f) {
+      msg(f.severity === 'error' ? 'err' : f.severity === 'warn' ? 'warn' : 'info',
+        '[' + f.title_fa + '] ' + f.message_fa, box);
+    });
+  }
+
+  var restockBtn = $('btn-restock');
+  if (restockBtn) restockBtn.addEventListener('click', function () {
+    if (state.snapshot) handleSnapshot(state.snapshot);
+  });
+
+  /* -------------------------------- یراق -------------------------------- */
+  function renderHardware() {
+    state.hwBom = hardwareBom();
+    var rows = state.hwBom.items.map(function (it) {
+      return '<tr><td>' + it.name_fa + '</td><td class="num">' + fa(it.qty) +
+        '</td><td>' + it.unit + '</td><td style="color:#888">' + it.detail_fa + '</td></tr>';
+    }).join('');
+    var warnHtml = (state.hwBom.warnings || []).map(function (w) {
+      return '<div class="msg warn">' + esc(w) + '</div>';
+    }).join('');
+    $('hw-table').innerHTML = (rows
+      ? '<table><tr><th>یراق</th><th>تعداد</th><th>واحد</th><th>مبنا</th></tr>' + rows + '</table>' +
+        '<div class="msg info">قواعد قطعی v1 — لولا بر اساس ارتفاع لنگه، ریل بر اساس عمق کابینت. ' +
+        'برای قیمت، بخش «برآورد قیمت» در تب متریال کلید hardware دارد.</div>'
+      : '<div class="msg info">یراقی از این snapshot استخراج نشد</div>') + warnHtml;
+  }
+
+  /* ------------------------------ سناریوها ------------------------------ */
+  function initScenarios() {
+    var el = $('scenario-json');
+    if (el && !el.dataset.filled) {
+      el.value = JSON.stringify(KalaxaScenarios.defaultScenarios(state.snapshot), null, 2);
+      el.dataset.filled = '1';
+    }
+    renderScenarioPresets();
+  }
+
+  // دکمهٔ آماده به‌جای JSON خام.
+  //
+  // کاربر گفت «سناریو خالی هست، کاربردش رو هم نمی‌دونم». تب یک textarea خالی
+  // نشان می‌داد و یک دکمه — بدون اینکه بگوید چه بنویسی. کسی که نمی‌داند
+  // «patch» چیست، هیچ راهی برای شروع نداشت. JSON برای حالت پیشرفته می‌ماند.
+  function renderScenarioPresets() {
+    var host = $('scenario-presets');
+    if (!host) return;
+    if (!state.snapshot) {
+      host.innerHTML = '<div class="meta">اول «اسکن مدل و آنالیز» را بزنید.</div>';
+      return;
+    }
+    var list = KalaxaScenarios.defaultScenarios(state.snapshot);
+    host.innerHTML = list.map(function (sc, i) {
+      return '<button data-scen="' + i + '">' + esc(sc.label_fa) + '</button>';
+    }).join('') +
+      (list.length > 1 ? '<button data-scen="all" class="primary">مقایسهٔ همه</button>' : '');
+    host._list = list;
+  }
+
+  $('scenario-presets').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-scen]');
+    if (!b || !state.snapshot) return;
+    var list = $('scenario-presets')._list || [];
+    runScenarios(b.dataset.scen === 'all' ? list : [list[Number(b.dataset.scen)]]);
+  });
+
+  function runScenarios(scenarios) {
+    var box = $('scenario-result');
+    box.innerHTML = '';
+    if (!scenarios || !scenarios.length) return;
+    var pt;
+    try { pt = JSON.parse($('price-json').value); } catch (e) { pt = {}; }
+    var base = Object.assign({}, state.snapshot, { stock_offcuts: readStock() });
+    renderScenarioTable(KalaxaScenarios.compare(base, scenarios, KalaxaNesting, pt), box);
+  }
+
+  $('btn-scenarios').addEventListener('click', function () {
+    var box = $('scenario-result');
+    box.innerHTML = '';
+    if (!state.snapshot) return;
+    var scenarios;
+    try { scenarios = JSON.parse($('scenario-json').value); }
+    catch (e) { msg('err', 'JSON سناریو نامعتبر: ' + e.message, box); return; }
+    runScenarios(scenarios);
+  });
+
+  // یک رندر برای هر دو مسیر (دکمهٔ آماده و JSON دلخواه). دو نسخه یعنی روزی
+  // یکی ستون تازه بگیرد و دیگری نه.
+  function renderScenarioTable(res, box) {
+    var rows = res.rows.map(function (r, i) {
+      var d = r.delta_sheets;
+      var dTxt = i === 0 ? '—' : (d === 0 ? '±۰' : (d > 0 ? '+' : '−') + fa(Math.abs(d)));
+      var dCol = d < 0 ? 'var(--ok)' : d > 0 ? 'var(--err)' : '#666';
+      return '<tr' + (i === 0 ? ' style="background:#f0ebe3"' : '') + '>' +
+        '<td>' + r.label_fa + '</td>' +
+        '<td class="num">' + fa(r.total_sheets) + '</td>' +
+        '<td class="num" style="color:' + dCol + '">' + dTxt + '</td>' +
+        '<td class="num">' + fa(r.total_stock_offcuts_used) + '</td>' +
+        '<td class="num">' + (r.sheet_cost ? fa(r.sheet_cost.toLocaleString('en-US')) : '—') + '</td>' +
+        '<td>' + (r.ok ? '✓' : '✗ ' + fa(r.unplaced_count) + ' جانگرفته') + '</td></tr>';
+    }).join('');
+    box.innerHTML = '<table><tr><th>سناریو</th><th>ورق نو</th><th>Δ</th><th>آفکات</th>' +
+      '<th>هزینه ورق</th><th>وضعیت</th></tr>' + rows + '</table>' +
+      '<div class="meta">ردیف اول وضعیت فعلی است. Δ منفی یعنی ورق کمتر — ' +
+      'ولی قبل از تصمیم، ستون «وضعیت» را ببینید: سناریویی که قطعه جا نمی‌دهد ' +
+      'به‌درد نمی‌خورد هرچند ورق کمتری نشان دهد.</div>';
+  }
+
+  /* ------------------------------ تنظیمات ------------------------------ */
+  var TAB_FA = { cut: 'نقشه برش', install: 'نقشه نصب', cabinets: 'کابینت‌ها',
+                 placement: 'جانمایی', material: 'گزارش متریال', hardware: 'یراق',
+                 price: 'شیت قیمت', templates: 'کاتالوگ تمپلیت', imported: 'قطعات خوانده‌شده',
+                 scenarios: 'سناریوها', settings: 'تنظیمات', rules: 'چک استاندارد' };
+
+  function displayCfg() {
+    var d = (state.settings && state.settings.display) || {};
+    var order = Array.isArray(d.tab_order) && d.tab_order.length ? d.tab_order.slice() : [];
+    Object.keys(TAB_FA).forEach(function (t) { if (order.indexOf(t) === -1) order.push(t); });
+    var hidden = Array.isArray(d.hidden_tabs) ? d.hidden_tabs.filter(function (t) { return t !== 'settings'; }) : [];
+    return { order: order, hidden: hidden };
+  }
+
+  // اعمال چیدمان تب‌ها روی نوار: ترتیب DOM + مخفی‌سازی؛ اگر تب فعال مخفی شد، اولین تبِ پیدا فعال می‌شود
+  function applyTabLayout() {
+    var cfg = displayCfg();
+    var bar = document.querySelector('.tabs');
+    if (!bar) return;
+    cfg.order.forEach(function (id) {
+      var t = document.querySelector('.tab[data-pane="' + id + '"]');
+      if (!t) return;
+      bar.appendChild(t);
+      t.style.display = cfg.hidden.indexOf(id) !== -1 ? 'none' : '';
+    });
+    var active = document.querySelector('.tab.active');
+    if (active && cfg.hidden.indexOf(active.dataset.pane) !== -1) {
+      var first = cfg.order.filter(function (id) { return cfg.hidden.indexOf(id) === -1; })[0];
+      var el2 = document.querySelector('.tab[data-pane="' + first + '"]');
+      if (el2) el2.click();
+    }
+  }
+
+  function setDisplay(patch) {
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    state.settings.display = Object.assign({ unit: 'cm' }, state.settings.display, patch);
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+  }
+
+  function renderTabLayoutUI() {
+    var cfg = displayCfg();
+    $('tab-layout').innerHTML = cfg.order.map(function (id, i) {
+      var hidden = cfg.hidden.indexOf(id) !== -1;
+      return '<div style="display:flex;align-items:center;gap:6px;font-size:13px">' +
+        '<button data-move="up" data-tab="' + id + '" ' + (i === 0 ? 'disabled' : '') +
+          ' style="padding:0 6px">▲</button>' +
+        '<button data-move="down" data-tab="' + id + '" ' + (i === cfg.order.length - 1 ? 'disabled' : '') +
+          ' style="padding:0 6px">▼</button>' +
+        '<label style="display:flex;align-items:center;gap:4px">' +
+        '<input type="checkbox" data-vis="' + id + '" ' + (hidden ? '' : 'checked') +
+          (id === 'settings' ? ' disabled title="تب تنظیمات مخفی‌شدنی نیست"' : '') + '> ' +
+        TAB_FA[id] + '</label></div>';
+    }).join('');
+  }
+
+  $('tab-layout').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-move]');
+    if (!b) return;
+    var cfg = displayCfg();
+    var i = cfg.order.indexOf(b.dataset.tab);
+    var j = b.dataset.move === 'up' ? i - 1 : i + 1;
+    if (j < 0 || j >= cfg.order.length) return;
+    var tmp = cfg.order[i]; cfg.order[i] = cfg.order[j]; cfg.order[j] = tmp;
+    setDisplay({ tab_order: cfg.order });
+    renderTabLayoutUI(); applyTabLayout();
+  });
+  $('tab-layout').addEventListener('change', function (e) {
+    var c = e.target.closest('input[data-vis]');
+    if (!c) return;
+    var cfg = displayCfg();
+    var id = c.dataset.vis;
+    var hidden = cfg.hidden.filter(function (t) { return t !== id; });
+    if (!c.checked && id !== 'settings') hidden.push(id);
+    setDisplay({ hidden_tabs: hidden });
+    renderTabLayoutUI(); applyTabLayout();
+  });
+
+  /* --------------------- مدیریت ورق‌ها (متریال‌ها) --------------------- */
+  function sheetsRerun() {
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    syncProjectForm();
+    if (state.snapshot) handleSnapshot(state.snapshot);
+  }
+
+  function renderSheetsUI() {
+    var st = state.settings || KalaxaSettings.defaults();
+    var unit = currentUnit();
+    var U = function (mm) { var v = KalaxaSettings.toUnit(mm, unit); return v == null ? '' : v; };
+    $('sheet-unit-hint').textContent = 'طول‌ها به ' + (unit === 'mm' ? 'میلی‌متر' : 'سانتی‌متر') +
+      ' — قیمت به ازای هر ورق (اختیاری)';
+    var rows = (st.sheets || []).map(function (s, i) {
+      return '<tr data-i="' + i + '">' +
+        '<td><input data-f="sheet_id" value="' + esc(s.sheet_id) + '" style="width:120px"></td>' +
+        '<td><input data-f="thickness_mm" type="number" step="0.1" min="0" value="' + U(s.thickness_mm) + '" style="width:70px"></td>' +
+        '<td><input data-f="width_mm" type="number" step="0.1" min="0" value="' + U(s.width_mm) + '" style="width:80px"></td>' +
+        '<td><input data-f="height_mm" type="number" step="0.1" min="0" value="' + U(s.height_mm) + '" style="width:80px"></td>' +
+        '<td style="text-align:center"><input data-f="has_grain" type="checkbox"' + (s.has_grain ? ' checked' : '') + '></td>' +
+        '<td><input data-f="price_per_sheet" type="number" min="0" value="' + (s.price_per_sheet || 0) + '" style="width:90px"></td>' +
+        '<td><button data-del="' + i + '" title="حذف ورق">✕</button></td></tr>';
+    }).join('');
+    $('sheet-table').innerHTML =
+      '<table><tr><th>نام ورق</th><th>ضخامت</th><th>طول ورق</th><th>عرض ورق</th>' +
+      '<th>راه مهم است؟</th><th>قیمت</th><th></th></tr>' + rows + '</table>';
+  }
+
+  $('sheet-table').addEventListener('change', function (e) {
+    var inp = e.target.closest('input[data-f]');
+    if (!inp) return;
+    var i = Number(inp.closest('tr').dataset.i);
+    var sh = state.settings.sheets[i];
+    if (!sh) return;
+    var f = inp.dataset.f;
+    $('sheet-msg').innerHTML = '';
+    if (f === 'has_grain') { sh.has_grain = inp.checked; }
+    else if (f === 'sheet_id') {
+      var newId = inp.value.trim();
+      if (!newId) { msg('err', 'نام ورق خالی نمی‌شود', $('sheet-msg')); inp.value = sh.sheet_id; return; }
+      var oldId = sh.sheet_id;
+      if (newId !== oldId) {
+        // نام در همهٔ ارجاع‌ها دنبال می‌شود: تنظیمات پروژه؛ قطعات هم با نگاشت نقش‌محور در اعمال بعدی می‌آیند
+        sh.sheet_id = newId;
+        sh.material = newId;
+        var pr = state.settings.project || {};
+        Object.keys(pr).forEach(function (k) { if (pr[k] === oldId) pr[k] = newId; });
+      }
+    } else if (f === 'price_per_sheet') {
+      sh.price_per_sheet = Math.max(0, Number(inp.value) || 0);
+    } else {
+      var mm = KalaxaSettings.fromUnit(inp.value, currentUnit());
+      if (mm == null || mm <= 0) { msg('err', 'مقدار نامعتبر', $('sheet-msg')); renderSheetsUI(); return; }
+      sh[f] = mm;
+    }
+    var v = KalaxaSettings.validate(state.settings);
+    if (!v.ok) { msgWithDetails('err', 'تنظیمات نامعتبر شد', v.errors.join('\n'), $('sheet-msg')); }
+    renderSheetsUI();
+    sheetsRerun();
+  });
+
+  $('sheet-table').addEventListener('click', function (e) {
+    var b = e.target.closest('button[data-del]');
+    if (!b) return;
+    var i = Number(b.dataset.del);
+    var sh = state.settings.sheets[i];
+    if (!sh) return;
+    $('sheet-msg').innerHTML = '';
+    var pr = state.settings.project || {};
+    var usedBy = Object.keys(pr).filter(function (k) { return pr[k] === sh.sheet_id; });
+    if (usedBy.length) {
+      msg('err', 'ورق «' + sh.sheet_id + '» در تنظیمات پروژه استفاده می‌شود — اول آن‌جا ورق دیگری انتخاب کنید',
+        $('sheet-msg'));
+      return;
+    }
+    if (state.settings.sheets.length <= 1) {
+      msg('err', 'حداقل یک ورق باید بماند', $('sheet-msg'));
+      return;
+    }
+    state.settings.sheets.splice(i, 1);
+    renderSheetsUI();
+    sheetsRerun();
+    msg('info', 'ورق حذف شد — اگر قطعه‌ای به آن ارجاع داشته باشد، در پیام‌های آنالیز می‌بینید', $('sheet-msg'));
+  });
+
+  $('btn-sheet-add').addEventListener('click', function () {
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    var n = 1;
+    var ids = {};
+    state.settings.sheets.forEach(function (s) { ids[s.sheet_id] = true; });
+    while (ids['ورق جدید ' + n]) n++;
+    state.settings.sheets.push({
+      sheet_id: 'ورق جدید ' + n, material: 'ورق جدید ' + n, color_code: '',
+      thickness_mm: 16, width_mm: 3660, height_mm: 1830,
+      has_grain: false, price_per_sheet: 0, trim_margin_mm: 10
+    });
+    renderSheetsUI();
+    sheetsRerun();
+  });
+
+  // فرم تنظیمات پروژه — منبع حقیقت همان شیء تنظیمات است؛ فرم فقط نما و ویرایشگر آن
+  function syncProjectForm() {
+    var st = state.settings || KalaxaSettings.defaults();
+    var sheets = st.sheets || [];
+    var pr = st.project || {};
+    [['prj-body', 'body_sheet_id'], ['prj-door', 'door_sheet_id'], ['prj-back', 'back_sheet_id'],
+     ['prj-dbottom', 'drawer_bottom_sheet_id']]
+      .forEach(function (pair) {
+        var sel = $(pair[0]);
+        sel.innerHTML = sheets.map(function (s) {
+          return '<option value="' + esc(s.sheet_id) + '">' + esc(s.sheet_id) +
+            ' (' + s.thickness_mm + 'mm)</option>';
+        }).join('');
+        if (pr[pair[1]]) sel.value = pr[pair[1]];
+        var chosen = sheets.filter(function (s) { return s.sheet_id === sel.value; })[0];
+        $(pair[0] + '-th').textContent = chosen ? 'ضخامت: ' + fa(chosen.thickness_mm) + 'mm' : '';
+      });
+    var sl = $('prj-slide');
+    sl.innerHTML = Object.keys(KalaxaSettings.SLIDE_TYPES).map(function (k) {
+      return '<option value="' + k + '">' + esc(KalaxaSettings.SLIDE_TYPES[k]) + '</option>';
+    }).join('');
+    if (pr.slide_type) sl.value = pr.slide_type;
+
+    // نوار لبه: ضخامت (۱/۲ میل) + توضیحات + کسر (فقط بدنه)
+    var eb = pr.edge_band || {};
+    var thOptions = KalaxaSettings.EDGE_BAND_THICKNESS.map(function (t) {
+      return '<option value="' + t + '">' + fa(t) + ' میل</option>';
+    }).join('');
+    $('prj-eb-body-th').innerHTML = thOptions;
+    $('prj-eb-door-th').innerHTML = thOptions;
+    if (eb.body && eb.body.thickness_mm) $('prj-eb-body-th').value = eb.body.thickness_mm;
+    if (eb.door && eb.door.thickness_mm) $('prj-eb-door-th').value = eb.door.thickness_mm;
+    $('prj-eb-body-note').value = (eb.body && eb.body.note) || '';
+    $('prj-eb-door-note').value = (eb.door && eb.door.note) || '';
+    $('prj-eb-body-sub').checked = !!(eb.body && eb.body.subtract);
+
+    // کدهای علامت — یک ورودی متنی به‌ازای هر نوع کار
+    var marks = Object.assign({}, KalaxaSettings.DEFAULT_MARKS, pr.marks || {});
+    $('mark-inputs').innerHTML = KalaxaSettings.MARK_KEYS.map(function (mkey) {
+      var m = marks[mkey] || KalaxaSettings.DEFAULT_MARKS[mkey];
+      return '<label>' + esc(KalaxaSettings.MARK_LABELS_FA[mkey]) + ': ' +
+        '<input data-mark="' + mkey + '" type="text" maxlength="3" value="' + esc(m.code) +
+        '" style="width:40px;text-align:center;font-weight:bold"></label>';
+    }).join('');
+  }
+
+  function currentProjectPatch(extra) {
+    var pr = (state.settings && state.settings.project) || KalaxaSettings.defaults().project;
+    return Object.assign({}, pr, extra);
+  }
+
+  $('mark-inputs').addEventListener('change', function (e) {
+    var inp = e.target.closest('input[data-mark]');
+    if (!inp) return;
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    var marks = Object.assign({}, KalaxaSettings.DEFAULT_MARKS, state.settings.project.marks || {});
+    var mkey = inp.dataset.mark;
+    marks[mkey] = Object.assign({}, marks[mkey], { code: inp.value.trim() });
+    var next = currentProjectPatch({ marks: marks });
+    var trial = Object.assign({}, state.settings, { project: next });
+    var v = KalaxaSettings.validate(trial);
+    $('settings-msg').innerHTML = '';
+    if (!v.ok) {
+      msgWithDetails('err', 'کد علامت نامعتبر — اعمال نشد', v.errors.join('\n'), $('settings-msg'));
+      syncProjectForm(); // مقدار قبلی معتبر را برگردان
+      return;
+    }
+    state.settings.project = next;
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    if (state.snapshot) handleSnapshot(state.snapshot);
+    msg('info', 'کدهای علامت به‌روزرسانی شد — برای ماندگاری «ذخیره در مدل» را بزنید', $('settings-msg'));
+  });
+
+  ['prj-body', 'prj-door', 'prj-back', 'prj-dbottom', 'prj-slide',
+   'prj-eb-body-th', 'prj-eb-door-th', 'prj-eb-body-note', 'prj-eb-door-note', 'prj-eb-body-sub']
+    .forEach(function (id) {
+    $(id).addEventListener('change', function () {
+      if (!state.settings) state.settings = KalaxaSettings.defaults();
+      state.settings.project = currentProjectPatch({
+        body_sheet_id: $('prj-body').value,
+        door_sheet_id: $('prj-door').value,
+        back_sheet_id: $('prj-back').value,
+        drawer_bottom_sheet_id: $('prj-dbottom').value,
+        slide_type: $('prj-slide').value,
+        edge_band: {
+          body: {
+            thickness_mm: Number($('prj-eb-body-th').value),
+            note: $('prj-eb-body-note').value,
+            subtract: $('prj-eb-body-sub').checked
+          },
+          door: {
+            thickness_mm: Number($('prj-eb-door-th').value),
+            note: $('prj-eb-door-note').value
+          }
+        }
+      });
+      $('settings-json').value = JSON.stringify(state.settings, null, 2);
+      syncProjectForm();
+      if (state.snapshot) handleSnapshot(state.snapshot); // اعمال زندهٔ نگاشت ورق/ریل/کسر نوار
+      msg('info', 'تنظیمات پروژه اعمال شد — برای ماندگاری «ذخیره در مدل» را بزنید', $('settings-msg'));
+    });
+  });
+
+  function syncSettingsUI() { syncUnitSelect(); renderSheetsUI(); syncProjectForm(); renderDoorForm(); renderTabLayoutUI(); applyTabLayout(); }
+
+  function syncUnitSelect() { var el = $('set-unit'); if (el) el.value = currentUnit(); }
+  $('set-unit').addEventListener('change', function () {
+    if (!state.settings) state.settings = KalaxaSettings.defaults();
+    state.settings.display = Object.assign({}, state.settings.display, { unit: this.value });
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    renderSheetsUI();
+    if (state.snapshot) { renderCabinets(); renderCutMaps(); renderInstallMaps(); }
+    msg('info', 'واحد نمایش: ' + (this.value === 'mm' ? 'میلی‌متر' : 'سانتی‌متر') +
+      ' — همهٔ ابعاد (نقشه برش، نقشه نصب، کابینت‌ها) هماهنگ شد؛ برای ماندگاری «ذخیره در مدل» را بزنید',
+      $('settings-msg'));
+  });
+  function readSettingsBox() {
+    try { return JSON.parse($('settings-json').value); }
+    catch (e) { msg('err', 'JSON تنظیمات نامعتبر: ' + e.message, $('settings-msg')); return null; }
+  }
+  $('btn-settings-validate').addEventListener('click', function () {
+    $('settings-msg').innerHTML = '';
+    var st = readSettingsBox(); if (!st) return;
+    var v = KalaxaSettings.validate(st);
+    if (v.ok) msg('ok', 'تنظیمات معتبر است ✓', $('settings-msg'));
+    else msgWithDetails('err', fa(v.errors.length) + ' خطا در تنظیمات', v.errors.join('\n'), $('settings-msg'));
+  });
+  $('btn-settings-save').addEventListener('click', function () {
+    $('settings-msg').innerHTML = '';
+    var st = readSettingsBox(); if (!st) return;
+    var v = KalaxaSettings.validate(st);
+    if (!v.ok) { msgWithDetails('err', 'ذخیره نشد — تنظیمات نامعتبر', v.errors.join('\n'), $('settings-msg')); return; }
+    state.settings = st;
+    syncSettingsUI();
+    if (state.snapshot) handleSnapshot(state.snapshot);
+    if (inSketchUp) window.sketchup.save_settings(JSON.stringify(st));
+    else msg('ok', 'در حالت توسعه فقط در حافظه اعمال شد', $('settings-msg'));
+    msg('ok', 'اسکن بعدی با این تنظیمات انجام می‌شود', $('settings-msg'));
+  });
+  // --- واژگان کارگاه ---
+  $('gloss-filter').addEventListener('input', renderGlossaryEditor);
+  $('gloss-save').addEventListener('click', function () {
+    var map = collectGlossaryOverrides();
+    if (!inSketchUp) {
+      // حالت توسعه: فقط در حافظه تا بشود بدون اسکچاپ هم دید.
+      var terms = {}, overridden = [];
+      Object.keys(state.glossary.terms).forEach(function (k) { terms[k] = state.glossary.terms[k]; });
+      Object.keys(map).forEach(function (k) {
+        if (map[k] && map[k] !== terms[k]) { terms[k] = map[k]; overridden.push(k); }
+      });
+      window.onGlossary(JSON.stringify({ locale: state.glossary.locale, terms: terms,
+        alternatives: {}, overridden: overridden }));
+      msg('ok', 'در حالت توسعه فقط در حافظه اعمال شد', $('gloss-msg'));
+      return;
+    }
+    window.sketchup.save_glossary(JSON.stringify(map));
+    msg('ok', 'ذخیره شد — در همهٔ پروژه‌ها اعمال می‌شود', $('gloss-msg'));
+  });
+
+  $('btn-settings-reset').addEventListener('click', function () {
+    state.settings = KalaxaSettings.defaults();
+    $('settings-json').value = JSON.stringify(state.settings, null, 2);
+    syncSettingsUI();
+    if (state.snapshot) handleSnapshot(state.snapshot);
+    msg('info', 'پیش‌فرض‌ها بازگردانده شد — برای ماندگاری «ذخیره در مدل» را بزنید', $('settings-msg'));
+  });
+
+  /* ------------------------------- انبار ------------------------------- */
+  $('btn-harvest').addEventListener('click', function () {
+    if (!state.nesting || !state.snapshot) return;
+    var h = KalaxaOffcutStore.harvest(state.invStore, state.nesting, state.snapshot, {
+      min_mm: (state.snapshot.cutting || {}).min_offcut_mm || 150,
+      project: (state.snapshot.source || {}).model_name || 'project',
+      now: new Date().toISOString().slice(0, 10)
+    });
+    state.invStore = h.store;
+    persistInventory();
+    refreshInvSummary();
+    msg(h.added ? 'ok' : 'info',
+      h.added ? fa(h.added) + ' آفکات به انبار اضافه و ذخیره شد' : 'آفکات جدیدی برای برداشت نبود',
+      $('inv-msg'));
+  });
+  $('btn-consume').addEventListener('click', function () {
+    if (!state.nesting) return;
+    var m = KalaxaOffcutStore.markConsumed(state.invStore, state.nesting, {
+      now: new Date().toISOString().slice(0, 10),
+      project: (state.snapshot.source || {}).model_name || 'project'
+    });
+    state.invStore = m.store;
+    persistInventory();
+    refreshInvSummary();
+    msg('ok', fa(m.marked) + ' آفکات به‌عنوان مصرف‌شده ثبت و ذخیره شد', $('inv-msg'));
+  });
+
+  /* ------------------------------ خروجی‌ها ------------------------------ */
+  $('btn-save').addEventListener('click', function () {
+    if (!state.snapshot) return;
+    var json = JSON.stringify(state.snapshot, null, 2);
+    if (inSketchUp) window.sketchup.save_snapshot(json);
+    else downloadText(json, 'kitchen_snapshot.json', 'application/json');
+  });
+
+  $('btn-print').addEventListener('click', function () {
+    if (!state.nesting) return;
+    if (!state.validation || !state.validation.ok) {
+      msg('err', 'خروجی چاپ مسدود است: اعتبارسنجی مستقل پاس نشده'); return;
+    }
+    var html = buildPrintHtml();
+    if (inSketchUp) window.sketchup.export_print(html);
+    else downloadText(html, 'kalaxa_maps.html', 'text/html');
+  });
+
+  $('btn-labels').addEventListener('click', function () {
+    if (!state.snapshot) return;
+    var html = KalaxaReport.labelsHtml(state.snapshot,
+      (state.snapshot.source || {}).model_name || '');
+    if (inSketchUp) window.sketchup.export_labels(html);
+    else downloadText(html, 'kalaxa_labels.html', 'text/html');
+  });
+
+  /* ------------------------------ اکسل ------------------------------ */
+  // یک مسیر ذخیره برای همهٔ خروجی‌های متنی. `export_csv` نامش تاریخی است؛
+  // پسوند را خودِ فراخوان می‌دهد تا بستهٔ تمپلیت هم از همین برود.
+  function exportText(name, content, ext) {
+    if (inSketchUp) {
+      window.sketchup.export_csv(JSON.stringify({ name: name, content: content, ext: ext }));
+    } else {
+      downloadText(content, name + '.' + (ext || 'txt'),
+                   ext === 'json' ? 'application/json' : 'text/plain;charset=utf-8');
+    }
+  }
+
+  function exportCsv(name, content) {
+    if (inSketchUp) window.sketchup.export_csv(JSON.stringify({ name: name, content: content }));
+    // خارج از اسکچاپ (مرورگر) نوع MIME باید csv باشد وگرنه بعضی مرورگرها
+    // فایل را به‌جای ذخیره نمایش می‌دهند و BOM از بین می‌رود.
+    else downloadText(content, name + '.csv', 'text/csv;charset=utf-8');
+  }
+
+  $('btn-xls-parts').addEventListener('click', function () {
+    if (!state.snapshot) return;
+    exportCsv('kalaxa_cutlist', KalaxaExcel.partsCsv(state.snapshot));
+  });
+
+  $('btn-xls-goods').addEventListener('click', function () {
+    if (!state.snapshot) return;
+    var eb = KalaxaReport.edgeBanding(state.snapshot);
+    var bom = state.hwBom || hardwareBom();
+    var g = KalaxaGoods.build(state.snapshot, state.nesting, eb, bom, goodsOpts());
+    exportCsv('kalaxa_goods', KalaxaExcel.goodsCsv(g));
+  });
+
+  $('btn-xls-in').addEventListener('click', function () {
+    if (!inSketchUp) { msg('warn', 'ورودی اکسل فقط داخل اسکچاپ کار می‌کند'); return; }
+    window.sketchup.import_csv('');
+  });
+
+  window.onCsvImported = function (json) {
+    var o;
+    try { o = typeof json === 'string' ? JSON.parse(json) : json; }
+    catch (e) { msg('err', 'پاسخ نامعتبر از فایل'); return; }
+    if (o.cancelled) return;
+
+    var r = KalaxaExcel.importParts(o.content || '');
+    (r.warnings || []).forEach(function (w) { msg('warn', w); });
+    if (!r.applied) return;
+
+    if (!state.rawSnapshot) { msg('err', 'اول اسکن کنید'); return; }
+    var copy = JSON.parse(JSON.stringify(state.rawSnapshot));
+    // اصلاح اکسل روی اسنپ‌شات **مؤثر** معنا دارد (چون کد قطعهٔ کابینت‌های
+    // خوانده‌شده آن‌جا ساخته می‌شود)، ولی باید در بازسازی‌های بعدی هم بماند.
+    state.excelUpdates = Object.assign(state.excelUpdates || {}, r.updates);
+    handleSnapshot(copy);
+    msg('ok', fa(r.applied) + ' سطر از اکسل خوانده شد');
+  };
+
+  function buildPrintHtml() {
+    var parts = [];
+    parts.push('<!DOCTYPE html><html lang="fa" dir="rtl"><head><meta charset="UTF-8">');
+    parts.push('<title>نقشه‌های کالاکسا</title><style>');
+    parts.push('body{font-family:Tahoma,sans-serif;margin:0;padding:10mm;}');
+    parts.push('.page{page-break-after:always;text-align:center;}svg{max-width:100%;height:auto;}');
+    parts.push('@media print{.no-print{display:none}}</style></head><body>');
+    parts.push('<div class="no-print" style="padding:8px;background:#eee;border-radius:6px;margin-bottom:10px">');
+    parts.push('چاپ: Ctrl+P — A3 یا A4 افقی</div>');
+    cutMapObjects().forEach(function (m) { parts.push('<div class="page">' + m.svg + '</div>'); });
+    installMapObjects().forEach(function (m) { parts.push('<div class="page">' + m.svg + '</div>'); });
+    parts.push('</body></html>');
+    return parts.join('\n');
+  }
+
+  function downloadText(text, filename, mime) {
+    var blob = new Blob([text], { type: mime + ';charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = filename;
+    a.click();
+    setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
+  }
+})();
+
+/* ---------------- جانمایی (schema v3) ---------------- */
+(function () {
+  var Pl = window.KalaxaPlacement;
+  var currentDoc = null;
+
+  function setStatus(msg) { // نوار وضعیت مشترک پایین پنل
+    var st = document.getElementById('status');
+    if (st) st.textContent = msg;
+  }
+  function escT(x) { // متن کاربر → HTML امن
+    return String(x == null ? '' : x)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+  }
+
+  function faN(n) { return String(n).replace(/[0-9]/g, function (d) { return '۰۱۲۳۴۵۶۷۸۹'[+d]; }); }
+  function el(id) { return document.getElementById(id); }
+
+  function renderPlacement() {
+    var listEl = el('placement-list');
+    if (!currentDoc) { listEl.innerHTML = ''; return; }
+    var units = Pl.listUnits(currentDoc);
+    var st = Pl.status(currentDoc);
+    el('placement-status').textContent =
+      'جانمایی‌شده: ' + faN(st.placed) + ' از ' + faN(st.total) + (st.complete ? ' — کامل ✔' : '');
+    var badge = el('placement-badge');
+    var missing = st.total - st.placed;
+    badge.style.display = missing > 0 ? '' : 'none';
+    if (missing > 0) badge.textContent = faN(missing);
+    el('btn-auto-row').disabled = false;
+    el('btn-save-placements').disabled = false;
+
+    var h = ['<table><tr><th>یونیت</th><th>نوع</th><th>x (mm)</th><th>y</th><th>z</th><th>چرخش°</th><th></th></tr>'];
+    units.forEach(function (u) {
+      var pl = u.placement || {};
+      function inp(k, v) {
+        return '<input type="number" step="1" style="width:80px" data-uid="' + u.id +
+          '" data-key="' + k + '" value="' + (v == null ? '' : v) + '">';
+      }
+      h.push('<tr><td>' + escT(u.name) + '</td><td>' + escT(u.kind) + '</td>' +
+        '<td>' + inp('x_mm', pl.x_mm) + '</td><td>' + inp('y_mm', pl.y_mm) + '</td>' +
+        '<td>' + inp('z_mm', pl.z_mm) + '</td><td>' + inp('rotation_z_deg', pl.rotation_z_deg) + '</td>' +
+        '<td><button data-clear="' + u.id + '" class="ghost">حذف</button>' +
+        (u.placed ? ' ✔' : '') + '</td></tr>');
+    });
+    h.push('</table>');
+    listEl.innerHTML = h.join('');
+
+    // هشدار هم‌پوشانی جانمایی
+    var ovs = Pl.checkOverlaps(currentDoc);
+    var box = document.getElementById('placement-overlaps');
+    if (!box) {
+      box = document.createElement('div');
+      box.id = 'placement-overlaps';
+      listEl.parentNode.insertBefore(box, listEl.nextSibling);
+    }
+    if (ovs.length) {
+      box.className = 'msg warn';
+      box.textContent = 'هم‌پوشانی جانمایی: ' + ovs.map(function (o) {
+        return o.a_name + ' ↔ ' + o.b_name + ' (' + faN(o.overlap_mm) + ' mm)'; // textContent → escape لازم نیست
+      }).join('؛ ');
+    } else {
+      box.className = '';
+      box.textContent = '';
+    }
+  }
+
+  function readRow(uid) {
+    var pl = {}, ok = true;
+    ['x_mm', 'y_mm', 'z_mm', 'rotation_z_deg'].forEach(function (k) {
+      var inp = document.querySelector('input[data-uid="' + uid + '"][data-key="' + k + '"]');
+      var v = inp && inp.value !== '' ? Number(inp.value) : NaN;
+      if (!isFinite(v)) ok = false;
+      pl[k] = Math.round(v);
+    });
+    return ok ? pl : null;
+  }
+
+  el('placement-list').addEventListener('change', function (ev) {
+    var uid = ev.target && ev.target.getAttribute('data-uid');
+    if (!uid || !currentDoc) return;
+    var pl = readRow(uid);
+    if (!pl) return; // ردیف ناقص — تا کامل‌شدن دست نمی‌زنیم
+    var r = Pl.setPlacement(currentDoc, uid, pl);
+    if (r.ok) { currentDoc = r.doc; renderPlacement(); }
+    else { setStatus(r.errors[0]); }
+  });
+
+  el('placement-list').addEventListener('click', function (ev) {
+    var uid = ev.target && ev.target.getAttribute('data-clear');
+    if (!uid || !currentDoc) return;
+    var r = Pl.clearPlacement(currentDoc, uid);
+    if (r.ok) { currentDoc = r.doc; renderPlacement(); }
+  });
+
+  el('btn-auto-row').addEventListener('click', function () {
+    if (!currentDoc) return;
+    var gap = Math.max(0, Math.round(Number(el('auto-gap').value) || 0));
+    var r = Pl.autoLayoutRow(currentDoc, { gap_mm: gap, only_unplaced: true });
+    if (r.ok) { currentDoc = r.doc; renderPlacement(); setStatus('چیدمان خودکار: ' + faN(r.changed) + ' یونیت'); }
+  });
+
+  el('btn-load-doc').addEventListener('click', function () {
+    if (inSketchUp) { window.sketchup.load_doc(); }
+    else { setStatus('خارج از اسکچاپ: سند مدل در دسترس نیست'); }
+  });
+
+  el('btn-save-placements').addEventListener('click', function () {
+    if (!currentDoc) return;
+    var placements = {};
+    Pl.listUnits(currentDoc).forEach(function (u) { placements[u.id] = u.placement; });
+    if (inSketchUp) window.sketchup.save_placements(JSON.stringify(placements));
+    else setStatus('خارج از اسکچاپ: ذخیره ممکن نیست');
+  });
+
+  window.onVersion = function (s) { // نسخهٔ پلاگین از Ruby (تک-منبع: version.rb)
+    var o = {}; try { o = JSON.parse(s); } catch (e) {}
+    var v = document.getElementById('app-version');
+    if (v && o.version) v.textContent = 'v' + o.version;
+  };
+
+  window.onDoc = function (s) { // از Ruby: رشتهٔ JSON (قرارداد push_json)
+    var payload = {}; try { payload = JSON.parse(s); } catch (e) {}
+    currentDoc = payload && payload.doc ? payload.doc : null;
+    if (!currentDoc) { setStatus('مدل سند کالاکسا ندارد — ابتدا از پلاگین طراحی ذخیره کنید'); return; }
+    renderPlacement();
+  };
+  window.onPlacementsSaved = function (s) {
+    var payload = {}; try { payload = JSON.parse(s); } catch (e) {}
+    setStatus('جانمایی در مدل ذخیره شد ✔');
+    if (payload && payload.doc) { currentDoc = payload.doc; renderPlacement(); }
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,674 @@
+﻿[
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-cutmap-svg.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  12622
+    },
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-doc-adapter.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  11171
+    },
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-hardware.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  10519
+    },
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-install-map.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  10120
+    },
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-nesting.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  22306
+    },
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-nesting-validator.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  9847
+    },
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-placement.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  8958
+    },
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-report.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  11063
+    },
+    {
+        "path":  "kalaxa-sync/assets/engines/kalaxa-schema.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  6384
+    },
+    {
+        "path":  "kalaxa-sync/assets/viewer.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  4409
+    },
+    {
+        "path":  "kalaxa-sync/assets/viewer-core.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  8808
+    },
+    {
+        "path":  "kalaxa-sync/assets/viewer-public.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  1381
+    },
+    {
+        "path":  "kalaxa-sync/bin/selftest.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  9150
+    },
+    {
+        "path":  "kalaxa-sync/includes/class-kalaxa-admin.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  2461
+    },
+    {
+        "path":  "kalaxa-sync/includes/class-kalaxa-canonical.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  3508
+    },
+    {
+        "path":  "kalaxa-sync/includes/class-kalaxa-envelope.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  4769
+    },
+    {
+        "path":  "kalaxa-sync/includes/class-kalaxa-push-policy.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  2795
+    },
+    {
+        "path":  "kalaxa-sync/includes/class-kalaxa-rest.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  8548
+    },
+    {
+        "path":  "kalaxa-sync/includes/class-kalaxa-share.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  7360
+    },
+    {
+        "path":  "kalaxa-sync/includes/class-kalaxa-store.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  5667
+    },
+    {
+        "path":  "kalaxa-sync/kalaxa-sync.php",
+        "repo":  "kalaxa-sync",
+        "ext":  "php",
+        "kind":  "other",
+        "size_bytes":  2063
+    },
+    {
+        "path":  "kalaxa-sync/tests/fixtures/doc_v2_expected.json",
+        "repo":  "kalaxa-sync",
+        "ext":  "json",
+        "kind":  "test",
+        "size_bytes":  2368
+    },
+    {
+        "path":  "kalaxa-sync/tests/test_viewer_core.js",
+        "repo":  "kalaxa-sync",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  5248
+    },
+    {
+        "path":  "kalaxa-sync-client/kalaxa_sync_client.rb",
+        "repo":  "kalaxa-sync-client",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  889
+    },
+    {
+        "path":  "kalaxa-sync-client/kalaxa_sync_client/client.rb",
+        "repo":  "kalaxa-sync-client",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  9988
+    },
+    {
+        "path":  "kalaxa-sync-client/kalaxa_sync_client/http_sync_port.rb",
+        "repo":  "kalaxa-sync-client",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  4785
+    },
+    {
+        "path":  "kalaxa-sync-client/kalaxa_sync_client/main.rb",
+        "repo":  "kalaxa-sync-client",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  1158
+    },
+    {
+        "path":  "kalaxa-sync-client/kalaxa_sync_client/sync_flow.rb",
+        "repo":  "kalaxa-sync-client",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  3620
+    },
+    {
+        "path":  "kalaxa-sync-client/test/test_sync_flow.rb",
+        "repo":  "kalaxa-sync-client",
+        "ext":  "rb",
+        "kind":  "test",
+        "size_bytes":  3049
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  761
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/adapter/store.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  5441
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/adapter/sync_port.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  2223
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/analysis_panel.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  8656
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/app/errors.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  1197
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/app/logging.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  1279
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/app/paths.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  691
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/app/settings.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  1343
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/benchmarks/bench_nesting.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "other",
+        "size_bytes":  3077
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/fixtures/golden_kitchen_snapshot.json",
+        "repo":  "kalaxa-unified",
+        "ext":  "json",
+        "kind":  "fixture",
+        "size_bytes":  12281
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/fixtures/kalaxa_doc_v2_golden.json",
+        "repo":  "kalaxa-unified",
+        "ext":  "json",
+        "kind":  "fixture",
+        "size_bytes":  2368
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_analysis_extras.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  10163
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_cabinet_view.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  6205
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_contract_matrix.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  12727
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_cutmap_marks.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  10206
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_doc_adapter.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  12122
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_nesting.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  10462
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_placement.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  8649
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_price_sheet.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  11768
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_project_settings.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  9166
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_rules.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  5404
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_scale.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  4377
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_settings_store.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  6717
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/dev/tests/test_v12_features.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "test",
+        "size_bytes":  8148
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/domain/document.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  2113
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/domain/entities.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  3971
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/i18n/en.json",
+        "repo":  "kalaxa-unified",
+        "ext":  "json",
+        "kind":  "source",
+        "size_bytes":  798
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/i18n/fa.json",
+        "repo":  "kalaxa-unified",
+        "ext":  "json",
+        "kind":  "source",
+        "size_bytes":  1061
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/i18n/i18n.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  1026
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/lib/offcut_store_io.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  1403
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/lib/project_scanner.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  10113
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/lib/settings_service.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  1590
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/main.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  1963
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/persistence/canonical.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  1462
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/persistence/migrations.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  3139
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/persistence/serializer.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  5606
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/persistence/validator.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  5536
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/analysis_panel.html",
+        "repo":  "kalaxa-unified",
+        "ext":  "html",
+        "kind":  "source",
+        "size_bytes":  71336
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/bridge.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  2907
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/dialog.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "source",
+        "size_bytes":  2207
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-cabinet-view.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  8165
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-cutmap-svg.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  12622
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-doc-adapter.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  11171
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-hardware.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  10519
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-install-map.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  10120
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-nesting.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  22306
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-nesting-validator.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  9847
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-offcut-store.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  6324
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-placement.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  8958
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-price-sheet.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  11397
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-report.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  11063
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-rules.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  11664
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-scenarios.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  4060
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-schema.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  6384
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/ui/kalaxa-settings.js",
+        "repo":  "kalaxa-unified",
+        "ext":  "js",
+        "kind":  "source",
+        "size_bytes":  22367
+    },
+    {
+        "path":  "kalaxa-unified/kalaxa/version.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  228
+    },
+    {
+        "path":  "kalaxa-unified/test/fixtures/doc_v1_envelope.json",
+        "repo":  "kalaxa-unified",
+        "ext":  "json",
+        "kind":  "test",
+        "size_bytes":  2283
+    },
+    {
+        "path":  "kalaxa-unified/test/fixtures/doc_v2_envelope.json",
+        "repo":  "kalaxa-unified",
+        "ext":  "json",
+        "kind":  "test",
+        "size_bytes":  2617
+    },
+    {
+        "path":  "kalaxa-unified/test/fixtures/doc_v2_tampered.json",
+        "repo":  "kalaxa-unified",
+        "ext":  "json",
+        "kind":  "test",
+        "size_bytes":  2083
+    },
+    {
+        "path":  "kalaxa-unified/test/golden/doc_v2_expected.json",
+        "repo":  "kalaxa-unified",
+        "ext":  "json",
+        "kind":  "test",
+        "size_bytes":  2368
+    },
+    {
+        "path":  "kalaxa-unified/test/testup/tc_kalaxa_phase01.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "test",
+        "size_bytes":  2295
+    },
+    {
+        "path":  "kalaxa-unified/test/testup/tc_kalaxa_phase02.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "test",
+        "size_bytes":  4070
+    },
+    {
+        "path":  "kalaxa-unified/test/unit/test_phase01.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "test",
+        "size_bytes":  4878
+    },
+    {
+        "path":  "kalaxa-unified/test/unit/test_phase02.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "test",
+        "size_bytes":  6416
+    },
+    {
+        "path":  "kalaxa-unified/test/unit/test_phase03.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "test",
+        "size_bytes":  4618
+    },
+    {
+        "path":  "kalaxa-unified/test/unit/test_phase04.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "test",
+        "size_bytes":  3787
+    },
+    {
+        "path":  "kalaxa-unified/tools/build_rbz.rb",
+        "repo":  "kalaxa-unified",
+        "ext":  "rb",
+        "kind":  "other",
+        "size_bytes":  2631
+    }
+]

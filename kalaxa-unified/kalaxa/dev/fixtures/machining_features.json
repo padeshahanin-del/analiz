@@ -1,0 +1,142 @@
+{
+  "side_with_hinges": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "dx": 16,
+    "dy": 550,
+    "dz": 720,
+    "id": "دیواره چپ [side]",
+    "name": "دیواره چپ [side]",
+    "machined": true,
+    "solid_ratio": 0.97,
+    "face_count": 13,
+    "features": {
+      "holes": [
+        {
+          "u_mm": 100.0,
+          "v_mm": 100.0,
+          "w_mm": 0.0,
+          "dia_mm": 35.0,
+          "through": false,
+          "depth_mm": 12.0
+        },
+        {
+          "u_mm": 620.0,
+          "v_mm": 100.0,
+          "w_mm": 0.0,
+          "dia_mm": 35.0,
+          "through": false,
+          "depth_mm": 12.0
+        },
+        {
+          "u_mm": 360.0,
+          "v_mm": 300.0,
+          "w_mm": 0.0,
+          "dia_mm": 8.0,
+          "through": true,
+          "depth_mm": 16.0
+        }
+      ],
+      "pockets": [
+
+      ]
+    }
+  },
+  "side_mirrored": {
+    "x": 884,
+    "y": 0,
+    "z": 0,
+    "dx": 16,
+    "dy": 550,
+    "dz": 720,
+    "id": "دیواره راست [side]",
+    "name": "دیواره راست [side]",
+    "machined": true,
+    "solid_ratio": 0.97,
+    "face_count": 9,
+    "features": {
+      "holes": [
+        {
+          "u_mm": 100.0,
+          "v_mm": 450.0,
+          "w_mm": 0.0,
+          "dia_mm": 35.0,
+          "through": false,
+          "depth_mm": 12.0
+        }
+      ],
+      "pockets": [
+
+      ]
+    }
+  },
+  "unknown_depth": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "dx": 868,
+    "dy": 550,
+    "dz": 16,
+    "id": "طبقه [shelf]",
+    "name": "طبقه [shelf]",
+    "machined": true,
+    "solid_ratio": 0.97,
+    "face_count": 8,
+    "features": {
+      "holes": [
+        {
+          "u_mm": 50.0,
+          "v_mm": 30.0,
+          "w_mm": 16.0,
+          "dia_mm": 5.0,
+          "through": false,
+          "depth_mm": null
+        }
+      ],
+      "pockets": [
+
+      ]
+    }
+  },
+  "grooved_back": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "dx": 868,
+    "dy": 16,
+    "dz": 688,
+    "id": "پشت‌بند [back]",
+    "name": "پشت‌بند [back]",
+    "machined": true,
+    "solid_ratio": 0.97,
+    "face_count": 8,
+    "features": {
+      "holes": [
+
+      ],
+      "pockets": [
+        {
+          "u_mm": 30.0,
+          "v_mm": 30.0,
+          "du_mm": 800.0,
+          "dv_mm": 12.0,
+          "w_mm": 0.0
+        }
+      ]
+    }
+  },
+  "machined_no_features": {
+    "x": 0,
+    "y": 0,
+    "z": 0,
+    "dx": 700,
+    "dy": 500,
+    "dz": 16,
+    "id": "بی‌هندسه",
+    "name": "قطعه فرزخورده",
+    "machined": true,
+    "solid_ratio": 0.9,
+    "face_count": 20
+  }
+}

@@ -1,0 +1,122 @@
+{
+  "_note": "نوار لبه و شیارِ پیش‌فرضِ هر نقش. این‌جا تنها منبع است: CabinetBuilder برای کابینت‌های ساختهٔ کالاکسا همین را می‌سازد و جدول «قطعات خوانده‌شده» هم برای کابینت کاربر همین را پیش‌فرض می‌گذارد. تست test_edge_defaults.rb تضمین می‌کند خروجی واقعی سازنده با این جدول یکی بماند — وگرنه دو قاعدهٔ موازی می‌شد و بی‌صدا از هم جدا می‌شدند. اضلاع: front=لبهٔ جلو (به‌طول قطعه)، back=لبهٔ عقب، top/bottom=دو سرِ عرض. groove.back یعنی شیار پشت‌بند.",
+  "_editable": "کارگاه می‌تواند این پیش‌فرض‌ها را عوض کند؛ در جدول هم هر ردیف دستی قابل اصلاح است.",
+  "roles": {
+    "side": {
+      "edge": {
+        "front": 1
+      },
+      "groove": {
+        "back": 1
+      }
+    },
+    "bottom": {
+      "edge": {
+        "front": 1
+      },
+      "groove": {
+        "back": 1
+      }
+    },
+    "top_bottom": {
+      "edge": {
+        "front": 1
+      },
+      "groove": {
+        "back": 1
+      }
+    },
+    "shelf": {
+      "edge": {
+        "front": 1
+      },
+      "groove": {}
+    },
+    "rail_top": {
+      "edge": {},
+      "groove": {}
+    },
+    "back": {
+      "edge": {},
+      "groove": {}
+    },
+    "door": {
+      "edge": {
+        "front": 1,
+        "back": 1,
+        "top": 1,
+        "bottom": 1
+      },
+      "groove": {}
+    },
+    "drawer_front": {
+      "edge": {
+        "front": 1,
+        "back": 1,
+        "top": 1,
+        "bottom": 1
+      },
+      "groove": {}
+    },
+    "drawer_side": {
+      "edge": {
+        "top": 1
+      },
+      "groove": {}
+    },
+    "drawer_back": {
+      "edge": {
+        "top": 1
+      },
+      "groove": {}
+    },
+    "drawer_bottom": {
+      "edge": {},
+      "groove": {}
+    },
+    "hardware": {
+      "edge": {},
+      "groove": {}
+    },
+    "unknown": {
+      "edge": {},
+      "groove": {}
+    },
+    "side_corner": {
+      "edge": {
+        "front": 1
+      },
+      "groove": {}
+    },
+    "bottom_corner": {
+      "edge": {
+        "front": 1
+      },
+      "groove": {
+        "back": 1
+      }
+    },
+    "shelf_corner": {
+      "edge": {
+        "front": 1
+      },
+      "groove": {}
+    },
+    "divider": {
+      "edge": {
+        "front": 1
+      },
+      "groove": {}
+    },
+    "rail_rod": {
+      "edge": {},
+      "groove": {}
+    }
+  },
+  "side_labels_fa": {
+    "front": "جلو",
+    "back": "عقب",
+    "top": "سر بالا",
+    "bottom": "سر پایین"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "_note": "قرارداد snapshot — تنها منبع حقیقت برای نسخه و شکل. تا این نسخه در دو زبان جدا نوشته شده بود: ProjectScanner::SCHEMA_VERSION در Ruby و KalaxaSchema.CURRENT_SCHEMA در JS. تولیدکننده و مصرف‌کننده روی مهم‌ترین قرارداد سیستم هیچ پیوند اجباری نداشتند.",
+  "catalog_version": 1,
+
+  "current_version": 2,
+  "supported_versions": [1, 2],
+
+  "_contract_note": "هر میزبان (اسکچاپ، مکس، رویت، …) فقط یک وظیفه دارد: مدل را بخواند و snapshotی بسازد که از KalaxaSchema.validateSnapshot بگذرد. هر چیز دیگری — لیست برش، نستینگ، BOM، قیمت، گزارش — از همین قرارداد تغذیه می‌شود و بدون تغییر منتقل می‌شود.",
+
+  "required_top_level": [
+    "schema_version",
+    "sheets",
+    "parts_flat",
+    "cabinets"
+  ],
+
+  "optional_top_level": [
+    "snapshot_id",
+    "created_at",
+    "source",
+    "project_settings_snapshot",
+    "cutting",
+    "stock_offcuts",
+    "moulding_boards",
+    "raw_cabinets",
+    "scan_errors",
+    "scan_warnings",
+    "scan_stats"
+  ],
+
+  "_part_note": "هر ردیف parts_flat باید این‌ها را داشته باشد؛ sheet_id باید به یکی از sheets اشاره کند.",
+  "required_part_fields": [
+    "part_uid",
+    "cabinet_id",
+    "key",
+    "count",
+    "cut_length_mm",
+    "cut_width_mm",
+    "sheet_id"
+  ],
+
+  "_producer_note": "تولیدکننده موظف است به‌جای انتشار قطعهٔ نامعتبر، آن را در scan_errors گزارش کند — خطا در محل وقوع، نه چند لایه بعد در پنل.",
+  "producer_must_report": [
+    "sheet_id تهی یا ناموجود",
+    "cut_length_mm یا cut_width_mm نامثبت",
+    "count نامثبت"
+  ]
+}
