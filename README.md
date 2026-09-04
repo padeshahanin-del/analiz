@@ -1,0 +1,2 @@
+# analiz
+skech analiz
